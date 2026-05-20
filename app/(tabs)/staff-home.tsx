@@ -1,26 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/lib/auth-context';
+import { useReceipts } from '@/lib/receipt-context';
 import { useColors } from '@/hooks/use-colors';
 import { ScreenContainer } from '@/components/screen-container';
 import { useRouter } from 'expo-router';
 
-interface Receipt {
-  id: string;
-  customer: string;
-  date: string;
-  status: 'completed' | 'pending';
-  itemCount: number;
-}
-
 export default function StaffHomeScreen() {
   const { user, logout } = useAuth();
+  const { receipts, isLoading, refreshReceipts, unsyncedCount, isOnline } = useReceipts();
   const colors = useColors();
   const router = useRouter();
-  const [receipts, setReceipts] = useState<Receipt[]>([
-    { id: '1', customer: 'John Doe', date: '2024-05-20', status: 'completed', itemCount: 3 },
-    { id: '2', customer: 'Jane Smith', date: '2024-05-19', status: 'completed', itemCount: 2 },
-  ]);
+
+  useEffect(() => {
+    refreshReceipts();
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -28,6 +22,10 @@ export default function StaffHomeScreen() {
 
   const handleCreateReceipt = () => {
     router.push('/create-receipt');
+  };
+
+  const handleRefresh = async () => {
+    await refreshReceipts();
   };
 
   const totalReceipts = receipts.length;
@@ -57,6 +55,21 @@ export default function StaffHomeScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Offline Banner */}
+        {!isOnline && (
+          <View className="mb-4 p-3 rounded-lg flex-row items-center gap-2" style={{ backgroundColor: colors.warning + '20' }}>
+            <Text style={{ color: colors.warning }}>📡</Text>
+            <View className="flex-1">
+              <Text className="text-xs font-bold uppercase" style={{ color: colors.warning }}>
+                Offline Mode
+              </Text>
+              <Text className="text-xs" style={{ color: colors.warning }}>
+                {unsyncedCount > 0 ? `${unsyncedCount} receipt(s) waiting to sync` : 'Changes will sync when online'}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Stats Row */}
         <View className="flex-row gap-3">
@@ -89,14 +102,33 @@ export default function StaffHomeScreen() {
 
       {/* Recent Receipts */}
       <ScrollView className="flex-1 px-6 py-4">
-        <Text className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: colors.muted }}>
-          Recent Receipts
-        </Text>
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-xs font-bold tracking-wider uppercase" style={{ color: colors.muted }}>
+            Recent Receipts
+          </Text>
+          <TouchableOpacity
+            onPress={handleRefresh}
+            disabled={isLoading}
+            className="px-3 py-1 rounded-lg"
+            style={{ backgroundColor: colors.primary + '20', opacity: isLoading ? 0.5 : 1 }}
+          >
+            <Text className="text-xs font-bold" style={{ color: colors.primary }}>
+              ↻ Refresh
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-        {receipts.length === 0 ? (
+        {isLoading ? (
+          <View className="items-center justify-center py-12">
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : receipts.length === 0 ? (
           <View className="items-center justify-center py-12">
             <Text className="text-base" style={{ color: colors.muted }}>
               No receipts yet
+            </Text>
+            <Text className="text-xs mt-2" style={{ color: colors.muted }}>
+              Tap the + button to create your first receipt
             </Text>
           </View>
         ) : (
@@ -105,9 +137,15 @@ export default function StaffHomeScreen() {
               <TouchableOpacity
                 key={receipt.id}
                 onPress={() => router.push(`/receipt-detail?id=${receipt.id}`)}
-                className="flex-row items-center gap-3 p-4 rounded-2xl"
+                className="flex-row items-center gap-3 p-4 rounded-2xl relative"
                 style={{ backgroundColor: colors.surface }}
               >
+                {!receipt.synced && (
+                  <View
+                    className="absolute top-2 right-2 w-2 h-2 rounded-full"
+                    style={{ backgroundColor: colors.warning }}
+                  />
+                )}
                 <View
                   className="w-12 h-12 rounded-lg items-center justify-center"
                   style={{ backgroundColor: colors.foreground }}
@@ -116,10 +154,10 @@ export default function StaffHomeScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-bold uppercase" style={{ color: colors.foreground }}>
-                    {receipt.customer}
+                    {receipt.customerName}
                   </Text>
                   <Text className="text-xs mt-1" style={{ color: colors.muted }}>
-                    {receipt.date} • {receipt.itemCount} items
+                    {receipt.date} • {receipt.items.length} items
                   </Text>
                 </View>
                 <View

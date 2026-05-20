@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
+import { useAuth } from '@/lib/auth-context';
+import { useReceipts } from '@/lib/receipt-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { useRouter } from 'expo-router';
 
@@ -16,6 +18,8 @@ interface FormData {
 export default function CreateReceiptScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { user } = useAuth();
+  const { createReceipt, isOnline } = useReceipts();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     customerName: '',
@@ -60,18 +64,50 @@ export default function CreateReceiptScreen() {
 
   const handleSubmit = async () => {
     if (!formData.customerName || !formData.location) {
-      alert('Please fill in all required fields');
+      Alert.alert('Validation Error', 'Please fill in all required fields');
+      return;
+    }
+
+    // Validate items - at least one item with name and quantity
+    const validItems = formData.items.filter((item) => item.name.trim() && item.quantity.trim());
+    if (validItems.length === 0) {
+      Alert.alert('Validation Error', 'Please add at least one item with name and quantity');
       return;
     }
 
     setIsLoading(true);
     try {
-      // TODO: Call backend API to save receipt
-      console.log('Receipt data:', formData);
-      alert('Receipt created successfully!');
-      router.back();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Create receipt with local storage
+      const receipt = await createReceipt({
+        staffId: user.id,
+        customerName: formData.customerName,
+        location: formData.location,
+        date: formData.date,
+        status: 'completed',
+        items: validItems,
+        notes: formData.notes,
+        images: formData.images,
+        synced: false,
+      });
+
+      // Show success message
+      const message = isOnline
+        ? 'Receipt created and saved!'
+        : 'Receipt saved locally. Will sync when online.';
+
+      Alert.alert('Success', message, [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error) {
-      alert('Failed to create receipt');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create receipt';
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -84,9 +120,16 @@ export default function CreateReceiptScreen() {
         <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 rounded-lg items-center justify-center" style={{ backgroundColor: colors.muted + '30' }}>
           <Text className="text-xl">←</Text>
         </TouchableOpacity>
-        <Text className="text-xl font-bold uppercase" style={{ color: '#fff' }}>
-          New Receipt
-        </Text>
+        <View className="flex-1">
+          <Text className="text-xl font-bold uppercase" style={{ color: '#fff' }}>
+            New Receipt
+          </Text>
+          {!isOnline && (
+            <Text className="text-xs mt-1" style={{ color: colors.warning }}>
+              📡 Offline Mode - Changes will sync when online
+            </Text>
+          )}
+        </View>
       </View>
 
       <ScrollView className="flex-1 px-6 py-4">
@@ -111,6 +154,7 @@ export default function CreateReceiptScreen() {
             placeholderTextColor={colors.muted}
             value={formData.customerName}
             onChangeText={(text) => setFormData({ ...formData, customerName: text })}
+            editable={!isLoading}
           />
 
           <Text className="text-xs font-bold tracking-wider uppercase mb-2" style={{ color: colors.muted }}>
@@ -128,6 +172,7 @@ export default function CreateReceiptScreen() {
             placeholderTextColor={colors.muted}
             value={formData.location}
             onChangeText={(text) => setFormData({ ...formData, location: text })}
+            editable={!isLoading}
           />
 
           <Text className="text-xs font-bold tracking-wider uppercase mb-2" style={{ color: colors.muted }}>
@@ -145,6 +190,7 @@ export default function CreateReceiptScreen() {
             placeholderTextColor={colors.muted}
             value={formData.date}
             onChangeText={(text) => setFormData({ ...formData, date: text })}
+            editable={!isLoading}
           />
         </View>
 
@@ -152,12 +198,13 @@ export default function CreateReceiptScreen() {
         <View className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: colors.foreground }}>
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-xs font-bold tracking-wider uppercase" style={{ color: colors.primary }}>
-              Items
+              Items *
             </Text>
             <TouchableOpacity
               onPress={handleAddItem}
+              disabled={isLoading}
               className="w-9 h-9 rounded-lg items-center justify-center"
-              style={{ backgroundColor: colors.primary }}
+              style={{ backgroundColor: colors.primary, opacity: isLoading ? 0.5 : 1 }}
             >
               <Text className="text-lg text-white">+</Text>
             </TouchableOpacity>
@@ -176,6 +223,7 @@ export default function CreateReceiptScreen() {
                   placeholderTextColor={colors.muted}
                   value={item.name}
                   onChangeText={(text) => handleUpdateItem(index, 'name', text)}
+                  editable={!isLoading}
                 />
                 <TextInput
                   className="w-20 px-3 py-2 rounded-lg font-semibold text-sm uppercase"
@@ -188,12 +236,14 @@ export default function CreateReceiptScreen() {
                   value={item.quantity}
                   onChangeText={(text) => handleUpdateItem(index, 'quantity', text)}
                   keyboardType="numeric"
+                  editable={!isLoading}
                 />
                 {formData.items.length > 1 && (
                   <TouchableOpacity
                     onPress={() => handleRemoveItem(index)}
+                    disabled={isLoading}
                     className="w-9 h-9 rounded-lg items-center justify-center"
-                    style={{ backgroundColor: colors.error + '30' }}
+                    style={{ backgroundColor: colors.error + '30', opacity: isLoading ? 0.5 : 1 }}
                   >
                     <Text style={{ color: colors.error }}>×</Text>
                   </TouchableOpacity>
@@ -222,6 +272,7 @@ export default function CreateReceiptScreen() {
             value={formData.notes}
             onChangeText={(text) => setFormData({ ...formData, notes: text })}
             multiline
+            editable={!isLoading}
           />
         </View>
 
@@ -233,8 +284,9 @@ export default function CreateReceiptScreen() {
             </Text>
             <TouchableOpacity
               onPress={handlePickImage}
+              disabled={isLoading}
               className="px-4 py-2 rounded-lg"
-              style={{ backgroundColor: colors.primary }}
+              style={{ backgroundColor: colors.primary, opacity: isLoading ? 0.5 : 1 }}
             >
               <Text className="text-xs font-bold uppercase text-white">Add Photo</Text>
             </TouchableOpacity>
@@ -249,6 +301,7 @@ export default function CreateReceiptScreen() {
                   </View>
                   <TouchableOpacity
                     onPress={() => handleRemoveImage(index)}
+                    disabled={isLoading}
                     className="absolute -top-2 -right-2 w-6 h-6 rounded-full items-center justify-center"
                     style={{ backgroundColor: colors.error }}
                   >
@@ -271,7 +324,7 @@ export default function CreateReceiptScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text className="text-base font-bold uppercase tracking-wider text-white">
-              Create Receipt
+              {isOnline ? 'Create Receipt' : 'Save Offline'}
             </Text>
           )}
         </TouchableOpacity>

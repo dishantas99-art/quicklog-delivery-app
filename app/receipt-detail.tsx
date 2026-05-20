@@ -1,30 +1,80 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
+import { useReceipts } from '@/lib/receipt-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import type { Receipt } from '@/lib/storage-service';
 
 export default function ReceiptDetailScreen() {
   const colors = useColors();
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { getReceipt, deleteReceipt, isOnline } = useReceipts();
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock receipt data
-  const receipt = {
-    id: id || '1',
-    customer: 'John Doe',
-    staff: 'Alice Smith',
-    location: '123 Main St, City',
-    date: '2024-05-20',
-    status: 'completed' as const,
-    items: [
-      { name: 'Package A', quantity: '1' },
-      { name: 'Package B', quantity: '2' },
-      { name: 'Document', quantity: '1' },
-    ],
-    notes: 'Delivered to front desk',
-    images: [],
+  useEffect(() => {
+    const loadReceipt = async () => {
+      if (!id || typeof id !== 'string') {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const data = await getReceipt(id);
+        setReceipt(data);
+      } catch (error) {
+        console.error('Error loading receipt:', error);
+        Alert.alert('Error', 'Failed to load receipt');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadReceipt();
+  }, [id]);
+
+  const handleDelete = () => {
+    Alert.alert('Delete Receipt', 'Are you sure you want to delete this receipt?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          if (!receipt) return;
+
+          try {
+            await deleteReceipt(receipt.id);
+            Alert.alert('Success', 'Receipt deleted', [
+              {
+                text: 'OK',
+                onPress: () => router.back(),
+              },
+            ]);
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete receipt');
+          }
+        },
+      },
+    ]);
   };
+
+  if (isLoading) {
+    return (
+      <ScreenContainer className="flex-1 items-center justify-center">
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ScreenContainer>
+    );
+  }
+
+  if (!receipt) {
+    return (
+      <ScreenContainer className="flex-1 items-center justify-center">
+        <Text style={{ color: colors.muted }}>Receipt not found</Text>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer containerClassName="flex-1" className="flex-1 p-0">
@@ -33,9 +83,16 @@ export default function ReceiptDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 rounded-lg items-center justify-center" style={{ backgroundColor: colors.muted + '30' }}>
           <Text className="text-xl">←</Text>
         </TouchableOpacity>
-        <Text className="text-xl font-bold uppercase" style={{ color: '#fff' }}>
-          Receipt #{receipt.id}
-        </Text>
+        <View className="flex-1">
+          <Text className="text-xl font-bold uppercase" style={{ color: '#fff' }}>
+            Receipt #{receipt.id.slice(-8)}
+          </Text>
+          {!receipt.synced && (
+            <Text className="text-xs mt-1" style={{ color: colors.warning }}>
+              ⏳ Pending sync
+            </Text>
+          )}
+        </View>
       </View>
 
       <ScrollView className="flex-1 px-6 py-4">
@@ -47,7 +104,7 @@ export default function ReceiptDetailScreen() {
                 Customer
               </Text>
               <Text className="text-lg font-bold mt-1" style={{ color: colors.foreground }}>
-                {receipt.customer}
+                {receipt.customerName}
               </Text>
             </View>
             <View
@@ -74,7 +131,7 @@ export default function ReceiptDetailScreen() {
             <View className="gap-2">
               <View className="flex-row justify-between">
                 <Text style={{ color: colors.muted }}>📍 Location:</Text>
-                <Text className="font-semibold" style={{ color: colors.foreground }}>
+                <Text className="font-semibold flex-1 text-right ml-2" style={{ color: colors.foreground }}>
                   {receipt.location}
                 </Text>
               </View>
@@ -85,9 +142,9 @@ export default function ReceiptDetailScreen() {
                 </Text>
               </View>
               <View className="flex-row justify-between">
-                <Text style={{ color: colors.muted }}>👤 Staff:</Text>
-                <Text className="font-semibold" style={{ color: colors.foreground }}>
-                  {receipt.staff}
+                <Text style={{ color: colors.muted }}>🕐 Created:</Text>
+                <Text className="font-semibold text-xs" style={{ color: colors.foreground }}>
+                  {new Date(receipt.createdAt).toLocaleDateString()}
                 </Text>
               </View>
             </View>
@@ -152,6 +209,23 @@ export default function ReceiptDetailScreen() {
           </View>
         )}
 
+        {/* Sync Status */}
+        {!receipt.synced && (
+          <View className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: colors.warning + '20' }}>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-lg">📡</Text>
+              <View className="flex-1">
+                <Text className="text-xs font-bold uppercase" style={{ color: colors.warning }}>
+                  Pending Sync
+                </Text>
+                <Text className="text-xs mt-1" style={{ color: colors.warning }}>
+                  {isOnline ? 'Will sync shortly' : 'Will sync when online'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Action Buttons */}
         <View className="flex-row gap-3 mb-8">
           <TouchableOpacity
@@ -161,6 +235,7 @@ export default function ReceiptDetailScreen() {
             <Text className="text-sm font-bold uppercase text-white">Edit</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            onPress={handleDelete}
             className="flex-1 py-3 rounded-lg items-center justify-center"
             style={{ backgroundColor: colors.error + '20', borderColor: colors.error, borderWidth: 1 }}
           >
