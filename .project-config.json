@@ -1,0 +1,51 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [
+    "server",
+    "db",
+    "user"
+  ],
+  "dev_command": "pnpm run dev",
+  "env_vars": {
+    "DATABASE_URL": "mysql://2dtPh8ddFV2ivYa.root:Y3nKT8ves2nfnI2XMB93@gateway06.us-east-1.prod.aws.tidbcloud.com:4000/XJ2PVMD2guHKd5Tvy2k37p?ssl={\"rejectUnauthorized\":true}"
+  },
+  "experiments": [
+    "no_db_push"
+  ],
+  "git_remote": {
+    "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663679856220/XJ2PVMD2guHKd5Tvy2k37p",
+    "access_key_id": "ASIAZV3A2ECZLSYWILYV",
+    "secret_access_key": "sxDJIzG1GDfoiG1MZdvHFTwDylud1R7D/dqcbHb0",
+    "session_token": "IQoJb3JpZ2luX2VjECgaCXVzLWVhc3QtMSJIMEYCIQCOFHP8xySxo2kdnD01Jz/K7EurYl2xmpQIqJvE3/ausQIhAJCvrRBJ2h8bgHSismAAncKuv/QWQ2r1tvUlYvB3dz4AKv8DCPH//////////wEQBBoMNjY1Mzg2MDk4ODY2Igw/dJwnjLY42c/HWN8q0wPMG/AqFLBBR3aJPa80QUFRWSXfQ5Q9bnDbyXTMENkPc5Yf3EqtgTX/jBr9gpGUJ1Y0iqQD7gL3VD9Cfdb8l6KvlRGTgYMIa+56aWLai1hGCB874psz94625D1jCjVYJDQ9d38iznhYiKnVIynOdAf66qNnCLAyaQOr+5ECpMg1hazBhrhT2hPNMuQswHPXs9/qFpriUM7y5MiQL6WQlQStx0xhiPu4jysTjVE6bzVV3CUtaH8DkVLHy6l1/sjSExmiBSJSzl9gIP7nUy0xZ/FwDWUltZGLMFXm5oqgK2/+n9ftlrFZhs6bvcVnDgC9TtQYydJVdWr8le6eXqmHGyzPaQs06mxiWOV6VN9RF7ynnoDhrFo4Ddmj9DByMN7hyIOLROZxWQqje3L/hlrrxBBw8QMdMp/jZDqFBqQ7N1YeoMnkcc8bcbqbLJ3o8aDCuyGb+JnYLRsTPzuoShWZZxbkBi7K685NBJ6opGVWPdPWgLrBWhaN29raDEPa+eIZuJi0Mprew6BVErCd5arV2CF+jeY8Bc9aggkTpUowaG0BCeRU+6bq3UuVOrhmBeYw3R1oIghgixyLMxUzxnSWm9e1/zqnHWtSvt86mQGlFOgQ8EDg4TCesbfQBjqcAT3RkHlXfj4Yl44LYKw3tu5HugdROcxq9kqWiEOMk9huKo+p8iqViuktyS0v37xd4qjUb8/M71T4jfVanAFqjugP8Gaoai0YTrMj13lOLszxW/oO11UHKmGOG4zkk/6U84d0fSCe/7ac/Y08iqxl/YrbETYhNvLLUNTE2lvbWfV9neOtfN4W5wg94rO/p0u+WlVNxQay8/9IturjoA==",
+    "expiration": "2026-05-21T03:51:58.000Z"
+  },
+  "name": "quicklog-delivery-app",
+  "path": "/home/ubuntu/quicklog-delivery-app",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "HHoriPtYgNVAAteisvJ58e",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "EXPO_APP_QR_URL": "exps://8081-i6kjm2ma4q5cqujj3gnm7-961ca142.sg1.manus.computer",
+    "EXPO_PACKAGER_PROXY_URL": "https://8081-i6kjm2ma4q5cqujj3gnm7-961ca142.sg1.manus.computer",
+    "EXPO_PUBLIC_API_BASE_URL": "https://3000-i6kjm2ma4q5cqujj3gnm7-961ca142.sg1.manus.computer",
+    "EXPO_PUBLIC_OAUTH_PORTAL_URL": "https://manus.im",
+    "EXPO_PUBLIC_OAUTH_SERVER_URL": "https://api.manus.im",
+    "EXPO_PUBLIC_OWNER_NAME": "DAS",
+    "EXPO_PUBLIC_OWNER_OPEN_ID": "kigzXT6tK7AoeWeh6pMHeq",
+    "JWT_SECRET": "79WkJZwfXmVC6gbr5NvSzT",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "DAS",
+    "OWNER_OPEN_ID": "kigzXT6tK7AoeWeh6pMHeq",
+    "REACT_NATIVE_PACKAGER_HOSTNAME": "8081-i6kjm2ma4q5cqujj3gnm7-961ca142.sg1.manus.computer",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "3678613e-dbd9-495e-ba8f-74894be92d02",
+    "VITE_APP_ID": "XJ2PVMD2guHKd5Tvy2k37p",
+    "VITE_APP_LOGO": "",
+    "VITE_APP_TITLE": "QuickLog Delivery App",
+    "VITE_FRONTEND_FORGE_API_KEY": "CGuSQS8H3R8LKbikWujdaG",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im"
+  },
+  "template_id": "app",
+  "test_command": "pnpm test"
+}
