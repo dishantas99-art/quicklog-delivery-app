@@ -1,5 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export interface ReceiptItem {
+  name: string;
+  quantity: string;
+  price: string;
+}
+
 export interface Receipt {
   id: string;
   staffId: string;
@@ -7,7 +13,8 @@ export interface Receipt {
   location: string;
   date: string;
   status: 'draft' | 'completed' | 'pending';
-  items: Array<{ name: string; quantity: string }>;
+  items: ReceiptItem[];
+  totalAmount: number;
   notes: string;
   images: string[];
   createdAt: string;
