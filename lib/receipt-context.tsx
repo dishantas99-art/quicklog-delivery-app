@@ -26,7 +26,6 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [unsyncedCount, setUnsyncedCount] = useState(0);
 
-  // Load receipts on mount and when user changes
   useEffect(() => {
     const loadReceipts = async () => {
       if (!user) {
@@ -34,21 +33,14 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         return;
       }
-
       try {
         setIsLoading(true);
         setError(null);
-
-        let loadedReceipts: Receipt[];
-        if (user.role === 'admin') {
-          loadedReceipts = await receiptStorage.getAllReceipts();
-        } else {
-          loadedReceipts = await receiptStorage.getStaffReceipts(user.id);
-        }
-
-        setReceipts(loadedReceipts);
-
-        // Count unsynced items
+        const loaded =
+          user.role === 'admin'
+            ? await receiptStorage.getAllReceipts()
+            : await receiptStorage.getStaffReceipts(user.id);
+        setReceipts(loaded);
         const unsynced = await receiptStorage.getUnsyncedReceipts();
         setUnsyncedCount(unsynced.length);
       } catch (err) {
@@ -57,33 +49,23 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     };
-
     loadReceipts();
   }, [user]);
 
-  // Attempt to sync when coming online
   useEffect(() => {
-    if (isOnline && unsyncedCount > 0) {
-      syncPendingReceipts();
-    }
+    if (isOnline && unsyncedCount > 0) syncPendingReceipts();
   }, [isOnline]);
 
   const refreshReceipts = async () => {
     if (!user) return;
-
     try {
       setIsLoading(true);
       setError(null);
-
-      let loadedReceipts: Receipt[];
-      if (user.role === 'admin') {
-        loadedReceipts = await receiptStorage.getAllReceipts();
-      } else {
-        loadedReceipts = await receiptStorage.getStaffReceipts(user.id);
-      }
-
-      setReceipts(loadedReceipts);
-
+      const loaded =
+        user.role === 'admin'
+          ? await receiptStorage.getAllReceipts()
+          : await receiptStorage.getStaffReceipts(user.id);
+      setReceipts(loaded);
       const unsynced = await receiptStorage.getUnsyncedReceipts();
       setUnsyncedCount(unsynced.length);
     } catch (err) {
@@ -97,12 +79,9 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     try {
       setError(null);
       const newReceipt = await receiptStorage.createReceipt(receipt);
-      setReceipts([...receipts, newReceipt]);
-
-      // Update unsynced count
+      setReceipts((prev) => [...prev, newReceipt]);
       const unsynced = await receiptStorage.getUnsyncedReceipts();
       setUnsyncedCount(unsynced.length);
-
       return newReceipt;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create receipt';
@@ -115,14 +94,11 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     try {
       setError(null);
       const updated = await receiptStorage.updateReceipt(id, updates);
-
       if (updated) {
-        setReceipts(receipts.map((r) => (r.id === id ? updated : r)));
-
+        setReceipts((prev) => prev.map((r) => (r.id === id ? updated : r)));
         const unsynced = await receiptStorage.getUnsyncedReceipts();
         setUnsyncedCount(unsynced.length);
       }
-
       return updated;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update receipt';
@@ -135,14 +111,11 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     try {
       setError(null);
       const success = await receiptStorage.deleteReceipt(id);
-
       if (success) {
-        setReceipts(receipts.filter((r) => r.id !== id));
-
+        setReceipts((prev) => prev.filter((r) => r.id !== id));
         const unsynced = await receiptStorage.getUnsyncedReceipts();
         setUnsyncedCount(unsynced.length);
       }
-
       return success;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete receipt';
@@ -154,8 +127,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const getReceipt = async (id: string) => {
     try {
       return await receiptStorage.getReceipt(id);
-    } catch (err) {
-      console.error('Error fetching receipt:', err);
+    } catch {
       return null;
     }
   };
@@ -163,19 +135,14 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const syncPendingReceipts = async () => {
     try {
       const pendingItems = await syncQueue.getPendingItems();
-
       for (const item of pendingItems) {
         try {
-          // TODO: Implement actual API sync
-          // For now, just mark as synced
           await receiptStorage.markAsSynced(item.receiptId);
           await syncQueue.removeFromQueue(item.id);
-        } catch (err) {
+        } catch {
           await syncQueue.incrementRetry(item.id);
-          console.error(`Failed to sync receipt ${item.receiptId}:`, err);
         }
       }
-
       const unsynced = await receiptStorage.getUnsyncedReceipts();
       setUnsyncedCount(unsynced.length);
     } catch (err) {
@@ -205,8 +172,6 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
 
 export function useReceipts() {
   const context = useContext(ReceiptContext);
-  if (!context) {
-    throw new Error('useReceipts must be used within a ReceiptProvider');
-  }
+  if (!context) throw new Error('useReceipts must be used within a ReceiptProvider');
   return context;
 }

@@ -6,7 +6,7 @@ export type UserRole = 'admin' | 'staff';
 
 export interface User {
   id: string;
-  email: string;
+  phone: string;
   name: string;
   role: UserRole;
 }
@@ -15,23 +15,28 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isSignedIn: boolean;
-  login: (email: string, password: string, role: UserRole) => Promise<void>;
+  login: (phone: string, pin: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Hardcoded accounts for demo — replace with real backend auth
+const ACCOUNTS: Array<User & { pin: string }> = [
+  { id: 'admin_1', phone: '0100000000', pin: '1234', name: 'Admin User', role: 'admin' },
+  { id: 'staff_1', phone: '0111111111', pin: '1111', name: 'John Smith', role: 'staff' },
+  { id: 'staff_2', phone: '0122222222', pin: '2222', name: 'Sarah Johnson', role: 'staff' },
+];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore token on app launch
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
         const token = await SecureStore.getItemAsync('authToken');
         const userData = await AsyncStorage.getItem('userData');
-
         if (token && userData) {
           setUser(JSON.parse(userData));
         }
@@ -41,29 +46,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     };
-
     bootstrapAsync();
   }, []);
 
-  const login = async (email: string, password: string, role: UserRole) => {
+  const login = async (phone: string, pin: string) => {
     setIsLoading(true);
     try {
-      // TODO: Call backend API to authenticate
-      // For now, mock authentication
-      const mockUser: User = {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        role,
-      };
-
-      // Store token (mock)
+      const account = ACCOUNTS.find(
+        (a) => a.phone === phone.trim() && a.pin === pin.trim()
+      );
+      if (!account) {
+        throw new Error('Invalid phone number or PIN');
+      }
+      const { pin: _pin, ...loggedInUser } = account;
       await SecureStore.setItemAsync('authToken', 'mock-token-' + Date.now());
-      await AsyncStorage.setItem('userData', JSON.stringify(mockUser));
-
-      setUser(mockUser);
+      await AsyncStorage.setItem('userData', JSON.stringify(loggedInUser));
+      setUser(loggedInUser);
     } catch (e) {
-      throw new Error('Login failed');
+      throw e instanceof Error ? e : new Error('Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -83,15 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isSignedIn: !!user,
-        login,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isLoading, isSignedIn: !!user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -99,8 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }
