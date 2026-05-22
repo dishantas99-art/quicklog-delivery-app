@@ -4,7 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "concurrently -k \"pnpm dev:server\" \"pnpm dev:metro\"",
+    "dev": "concurrently -k \"npm run dev:server\" \"npm run dev:metro\"",
     "dev:server": "cross-env NODE_ENV=development tsx watch server/_core/index.ts",
     "dev:metro": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 npx expo start --web --port ${EXPO_PORT:-8081}",
     "build": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
@@ -40,6 +40,7 @@
     "expo-font": "~14.0.10",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
+    "expo-image-picker": "~16.0.6",
     "expo-keep-awake": "~15.0.8",
     "expo-linking": "~8.0.10",
     "expo-network": "^55.0.14",
@@ -54,6 +55,7 @@
     "expo-web-browser": "~15.0.10",
     "express": "^4.22.1",
     "jose": "6.1.0",
+    "mysql2": "^3.22.3",
     "nativewind": "^4.2.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -67,8 +69,7 @@
     "react-native-worklets": "0.5.1",
     "superjson": "^1.13.3",
     "tailwind-merge": "^2.6.0",
-    "zod": "^4.2.1",
-    "expo-image-picker": "~16.0.6"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",
@@ -89,6 +90,5 @@
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "vitest": "^2.1.9"
-  },
-  "packageManager": "pnpm@9.12.0"
+  }
 }
