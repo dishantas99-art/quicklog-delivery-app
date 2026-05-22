@@ -21,7 +21,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hardcoded accounts for demo — replace with real backend auth
+// Demo accounts — replace with real API auth in production
 const ACCOUNTS: Array<User & { pin: string }> = [
   { id: 'admin_1', phone: '0100000000', pin: '1234', name: 'Admin User', role: 'admin' },
   { id: 'staff_1', phone: '0111111111', pin: '1111', name: 'John Smith', role: 'staff' },
@@ -37,9 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const token = await SecureStore.getItemAsync('authToken');
         const userData = await AsyncStorage.getItem('userData');
-        if (token && userData) {
-          setUser(JSON.parse(userData));
-        }
+        if (token && userData) setUser(JSON.parse(userData));
       } catch (e) {
         console.error('Failed to restore session:', e);
       } finally {
@@ -55,11 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const account = ACCOUNTS.find(
         (a) => a.phone === phone.trim() && a.pin === pin.trim()
       );
-      if (!account) {
-        throw new Error('Invalid phone number or PIN');
-      }
+      if (!account) throw new Error('Invalid phone number or PIN');
       const { pin: _pin, ...loggedInUser } = account;
-      await SecureStore.setItemAsync('authToken', 'mock-token-' + Date.now());
+      await SecureStore.setItemAsync('authToken', 'token-' + Date.now());
       await AsyncStorage.setItem('userData', JSON.stringify(loggedInUser));
       setUser(loggedInUser);
     } catch (e) {

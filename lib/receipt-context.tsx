@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { receiptStorage, type Receipt, syncQueue } from './storage-service';
+import { receiptStorage, syncQueue, type Receipt } from './storage-service';
 import { useAuth } from './auth-context';
 import { useNetworkStatus } from '@/hooks/use-network-status';
 
@@ -26,145 +26,80 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [unsyncedCount, setUnsyncedCount] = useState(0);
 
-  useEffect(() => {
-    const loadReceipts = async () => {
-      if (!user) {
-        setReceipts([]);
-        setIsLoading(false);
-        return;
-      }
-      try {
-        setIsLoading(true);
-        setError(null);
-        const loaded =
-          user.role === 'admin'
-            ? await receiptStorage.getAllReceipts()
-            : await receiptStorage.getStaffReceipts(user.id);
-        setReceipts(loaded);
-        const unsynced = await receiptStorage.getUnsyncedReceipts();
-        setUnsyncedCount(unsynced.length);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load receipts');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadReceipts();
-  }, [user]);
-
-  useEffect(() => {
-    if (isOnline && unsyncedCount > 0) syncPendingReceipts();
-  }, [isOnline]);
-
-  const refreshReceipts = async () => {
-    if (!user) return;
+  const loadReceipts = async () => {
+    if (!user) { setReceipts([]); setIsLoading(false); return; }
     try {
-      setIsLoading(true);
-      setError(null);
-      const loaded =
-        user.role === 'admin'
-          ? await receiptStorage.getAllReceipts()
-          : await receiptStorage.getStaffReceipts(user.id);
+      setIsLoading(true); setError(null);
+      const loaded = user.role === 'admin'
+        ? await receiptStorage.getAllReceipts()
+        : await receiptStorage.getStaffReceipts(user.id);
       setReceipts(loaded);
       const unsynced = await receiptStorage.getUnsyncedReceipts();
       setUnsyncedCount(unsynced.length);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh receipts');
+      setError(err instanceof Error ? err.message : 'Failed to load receipts');
     } finally {
       setIsLoading(false);
     }
   };
 
+  useEffect(() => { loadReceipts(); }, [user]);
+
+  useEffect(() => {
+    if (isOnline && unsyncedCount > 0) syncPendingReceipts();
+  }, [isOnline]);
+
+  const refreshReceipts = loadReceipts;
+
   const createReceipt = async (receipt: Omit<Receipt, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      setError(null);
-      const newReceipt = await receiptStorage.createReceipt(receipt);
-      setReceipts((prev) => [...prev, newReceipt]);
-      const unsynced = await receiptStorage.getUnsyncedReceipts();
-      setUnsyncedCount(unsynced.length);
-      return newReceipt;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create receipt';
-      setError(message);
-      throw err;
-    }
+    setError(null);
+    const newReceipt = await receiptStorage.createReceipt(receipt);
+    setReceipts((prev) => [...prev, newReceipt]);
+    const unsynced = await receiptStorage.getUnsyncedReceipts();
+    setUnsyncedCount(unsynced.length);
+    return newReceipt;
   };
 
   const updateReceipt = async (id: string, updates: Partial<Receipt>) => {
-    try {
-      setError(null);
-      const updated = await receiptStorage.updateReceipt(id, updates);
-      if (updated) {
-        setReceipts((prev) => prev.map((r) => (r.id === id ? updated : r)));
-        const unsynced = await receiptStorage.getUnsyncedReceipts();
-        setUnsyncedCount(unsynced.length);
-      }
-      return updated;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update receipt';
-      setError(message);
-      throw err;
+    setError(null);
+    const updated = await receiptStorage.updateReceipt(id, updates);
+    if (updated) {
+      setReceipts((prev) => prev.map((r) => (r.id === id ? updated : r)));
+      const unsynced = await receiptStorage.getUnsyncedReceipts();
+      setUnsyncedCount(unsynced.length);
     }
+    return updated;
   };
 
   const deleteReceipt = async (id: string) => {
-    try {
-      setError(null);
-      const success = await receiptStorage.deleteReceipt(id);
-      if (success) {
-        setReceipts((prev) => prev.filter((r) => r.id !== id));
-        const unsynced = await receiptStorage.getUnsyncedReceipts();
-        setUnsyncedCount(unsynced.length);
-      }
-      return success;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete receipt';
-      setError(message);
-      throw err;
-    }
-  };
-
-  const getReceipt = async (id: string) => {
-    try {
-      return await receiptStorage.getReceipt(id);
-    } catch {
-      return null;
-    }
-  };
-
-  const syncPendingReceipts = async () => {
-    try {
-      const pendingItems = await syncQueue.getPendingItems();
-      for (const item of pendingItems) {
-        try {
-          await receiptStorage.markAsSynced(item.receiptId);
-          await syncQueue.removeFromQueue(item.id);
-        } catch {
-          await syncQueue.incrementRetry(item.id);
-        }
-      }
+    setError(null);
+    const success = await receiptStorage.deleteReceipt(id);
+    if (success) {
+      setReceipts((prev) => prev.filter((r) => r.id !== id));
       const unsynced = await receiptStorage.getUnsyncedReceipts();
       setUnsyncedCount(unsynced.length);
-    } catch (err) {
-      console.error('Error syncing receipts:', err);
     }
+    return success;
+  };
+
+  const getReceipt = async (id: string) => receiptStorage.getReceipt(id);
+
+  const syncPendingReceipts = async () => {
+    const pendingItems = await syncQueue.getPendingItems();
+    for (const item of pendingItems) {
+      try {
+        await receiptStorage.markAsSynced(item.receiptId);
+        await syncQueue.removeFromQueue(item.id);
+      } catch {
+        await syncQueue.incrementRetry(item.id);
+      }
+    }
+    const unsynced = await receiptStorage.getUnsyncedReceipts();
+    setUnsyncedCount(unsynced.length);
   };
 
   return (
-    <ReceiptContext.Provider
-      value={{
-        receipts,
-        isLoading,
-        error,
-        createReceipt,
-        updateReceipt,
-        deleteReceipt,
-        getReceipt,
-        refreshReceipts,
-        unsyncedCount,
-        isOnline,
-      }}
-    >
+    <ReceiptContext.Provider value={{ receipts, isLoading, error, createReceipt, updateReceipt, deleteReceipt, getReceipt, refreshReceipts, unsyncedCount, isOnline }}>
       {children}
     </ReceiptContext.Provider>
   );
