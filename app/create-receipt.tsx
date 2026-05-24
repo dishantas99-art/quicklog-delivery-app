@@ -35,26 +35,26 @@ export default function CreateReceiptScreen() {
     images: [],
   });
 
-  const handleAddItem = () =>
+  const addItem = () =>
     setFormData({ ...formData, items: [...formData.items, { name: '', quantity: '', price: '' }] });
 
-  const handleRemoveItem = (index: number) =>
-    setFormData({ ...formData, items: formData.items.filter((_, i) => i !== index) });
+  const removeItem = (i: number) =>
+    setFormData({ ...formData, items: formData.items.filter((_, idx) => idx !== i) });
 
-  const handleUpdateItem = (index: number, field: keyof ReceiptItem, value: string) => {
-    const newItems = [...formData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setFormData({ ...formData, items: newItems });
+  const updateItem = (i: number, field: keyof ReceiptItem, value: string) => {
+    const items = [...formData.items];
+    items[i] = { ...items[i], [field]: value };
+    setFormData({ ...formData, items });
   };
 
-  const handlePickImage = async () => {
+  const pickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow access to your photo library.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.7,
     });
@@ -63,7 +63,7 @@ export default function CreateReceiptScreen() {
     }
   };
 
-  const handleCameraImage = async () => {
+  const pickFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow camera access.');
@@ -75,8 +75,8 @@ export default function CreateReceiptScreen() {
     }
   };
 
-  const handleRemoveImage = (index: number) =>
-    setFormData({ ...formData, images: formData.images.filter((_, i) => i !== index) });
+  const removeImage = (i: number) =>
+    setFormData({ ...formData, images: formData.images.filter((_, idx) => idx !== i) });
 
   const lineTotal = (item: ReceiptItem) =>
     ((parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)).toFixed(2);
@@ -84,22 +84,22 @@ export default function CreateReceiptScreen() {
   const grandTotal = computeTotal(formData.items);
 
   const handleSubmit = async () => {
-    if (!formData.customerName || !formData.location) {
-      Alert.alert('Validation Error', 'Please fill in all required fields');
+    if (!formData.customerName.trim() || !formData.location.trim()) {
+      Alert.alert('Validation Error', 'Customer name and location are required.');
       return;
     }
     const validItems = formData.items.filter((item) => item.name.trim() && item.quantity.trim());
     if (validItems.length === 0) {
-      Alert.alert('Validation Error', 'Please add at least one item with name and quantity');
+      Alert.alert('Validation Error', 'Please add at least one item with a name and quantity.');
       return;
     }
     setIsLoading(true);
     try {
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error('Not authenticated');
       await createReceipt({
         staffId: user.id,
-        customerName: formData.customerName,
-        location: formData.location,
+        customerName: formData.customerName.trim(),
+        location: formData.location.trim(),
         date: formData.date,
         status: 'completed',
         items: validItems,
@@ -109,12 +109,12 @@ export default function CreateReceiptScreen() {
         synced: false,
       });
       Alert.alert(
-        'Success',
-        isOnline ? 'Receipt created and saved!' : 'Receipt saved locally. Will sync when online.',
+        'Receipt Created',
+        isOnline ? 'Saved successfully.' : 'Saved locally. Will sync when online.',
         [{ text: 'OK', onPress: () => router.back() }],
       );
-    } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create receipt');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to create receipt');
     } finally {
       setIsLoading(false);
     }
@@ -124,118 +124,143 @@ export default function CreateReceiptScreen() {
     <ScreenContainer containerClassName="flex-1" className="flex-1 p-0">
       {/* Header */}
       <View className="px-6 py-4 flex-row items-center gap-4" style={{ backgroundColor: colors.foreground }}>
-        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 rounded-lg items-center justify-center" style={{ backgroundColor: colors.muted + '30' }}>
-          <Text className="text-xl text-white">←</Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 rounded-lg items-center justify-center"
+          style={{ backgroundColor: colors.muted + '30' }}
+        >
+          <Text className="text-base font-bold text-white">{'<'}</Text>
         </TouchableOpacity>
         <View className="flex-1">
           <Text className="text-xl font-bold uppercase" style={{ color: '#fff' }}>New Receipt</Text>
-          {!isOnline && <Text className="text-xs mt-1" style={{ color: colors.warning }}>📡 Offline Mode</Text>}
+          {!isOnline && <Text className="text-xs mt-0.5" style={{ color: colors.warning }}>Offline Mode</Text>}
         </View>
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView className="flex-1 px-6 py-4" keyboardShouldPersistTaps="handled">
 
-          {/* Delivery Details */}
-          <View className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
-            <Text className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: colors.muted }}>Delivery Details</Text>
-            {[
-              { label: 'Customer Name *', key: 'customerName', placeholder: 'Enter customer name', keyboard: 'default' as const },
-              { label: 'Location *', key: 'location', placeholder: 'Enter delivery location', keyboard: 'default' as const },
-              { label: 'Date', key: 'date', placeholder: 'YYYY-MM-DD', keyboard: 'default' as const },
-            ].map(({ label, key, placeholder, keyboard }) => (
+          {/* ── Delivery Details ── */}
+          <View className="mb-5 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
+            <Text className="text-xs font-bold tracking-wider uppercase mb-4" style={{ color: colors.muted }}>
+              Delivery Details
+            </Text>
+
+            {([
+              { label: 'Customer Name *', key: 'customerName', placeholder: 'Enter customer name', kb: 'default' },
+              { label: 'Location *',      key: 'location',     placeholder: 'Enter delivery location', kb: 'default' },
+              { label: 'Date',            key: 'date',         placeholder: 'YYYY-MM-DD', kb: 'default' },
+            ] as const).map(({ label, key, placeholder, kb }) => (
               <View key={key} className="mb-4">
-                <Text className="text-xs font-bold tracking-wider uppercase mb-2" style={{ color: colors.muted }}>{label}</Text>
+                <Text className="text-xs font-bold tracking-wider uppercase mb-1" style={{ color: colors.muted }}>
+                  {label}
+                </Text>
                 <TextInput
-                  className="w-full px-4 py-3 rounded-lg font-semibold"
+                  className="w-full px-4 py-3 rounded-xl font-semibold"
                   style={{ backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border, borderWidth: 1 }}
                   placeholder={placeholder}
                   placeholderTextColor={colors.muted}
                   value={(formData as any)[key]}
-                  onChangeText={(text) => setFormData({ ...formData, [key]: text })}
+                  onChangeText={(t) => setFormData({ ...formData, [key]: t })}
                   editable={!isLoading}
-                  keyboardType={keyboard}
+                  keyboardType={kb as any}
                 />
               </View>
             ))}
           </View>
 
-          {/* Items */}
-          <View className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: colors.foreground }}>
+          {/* ── Items ── */}
+          <View className="mb-5 p-4 rounded-2xl" style={{ backgroundColor: colors.foreground }}>
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-xs font-bold tracking-wider uppercase" style={{ color: colors.primary }}>Items *</Text>
-              <TouchableOpacity onPress={handleAddItem} disabled={isLoading} className="w-9 h-9 rounded-lg items-center justify-center" style={{ backgroundColor: colors.primary }}>
-                <Text className="text-lg text-white font-bold">+</Text>
+              <Text className="text-xs font-bold tracking-wider uppercase" style={{ color: colors.primary }}>
+                Items *
+              </Text>
+              <TouchableOpacity
+                onPress={addItem}
+                disabled={isLoading}
+                className="w-8 h-8 rounded-lg items-center justify-center"
+                style={{ backgroundColor: colors.primary }}
+              >
+                <Text className="text-xl font-bold text-white leading-none">+</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Column Headers */}
-            <View className="flex-row gap-2 mb-2 px-1">
+            {/* Column headers */}
+            <View className="flex-row gap-2 mb-2">
               <Text className="flex-1 text-xs font-bold uppercase" style={{ color: colors.muted }}>Item</Text>
               <Text className="w-14 text-xs font-bold uppercase text-center" style={{ color: colors.muted }}>Qty</Text>
               <Text className="w-20 text-xs font-bold uppercase text-center" style={{ color: colors.muted }}>Price(RM)</Text>
               <Text className="w-20 text-xs font-bold uppercase text-right" style={{ color: colors.muted }}>Total</Text>
-              <View style={{ width: 32 }} />
+              <View style={{ width: 28 }} />
             </View>
 
-            {formData.items.map((item, index) => (
-              <View key={index} className="mb-3 pb-3 border-b" style={{ borderColor: colors.muted + '30' }}>
-                <View className="flex-row gap-2 items-center">
-                  <TextInput
-                    className="flex-1 px-3 py-2 rounded-lg font-semibold text-sm"
-                    style={{ backgroundColor: colors.muted + '20', color: '#fff' }}
-                    placeholder="Item name"
-                    placeholderTextColor={colors.muted}
-                    value={item.name}
-                    onChangeText={(t) => handleUpdateItem(index, 'name', t)}
-                    editable={!isLoading}
-                  />
-                  <TextInput
-                    className="w-14 px-2 py-2 rounded-lg font-semibold text-sm text-center"
-                    style={{ backgroundColor: colors.muted + '20', color: '#fff' }}
-                    placeholder="0"
-                    placeholderTextColor={colors.muted}
-                    value={item.quantity}
-                    onChangeText={(t) => handleUpdateItem(index, 'quantity', t.replace(/[^0-9.]/g, ''))}
-                    keyboardType="decimal-pad"
-                    editable={!isLoading}
-                  />
-                  <TextInput
-                    className="w-20 px-2 py-2 rounded-lg font-semibold text-sm text-center"
-                    style={{ backgroundColor: colors.muted + '20', color: '#fff' }}
-                    placeholder="0.00"
-                    placeholderTextColor={colors.muted}
-                    value={item.price}
-                    onChangeText={(t) => handleUpdateItem(index, 'price', t.replace(/[^0-9.]/g, ''))}
-                    keyboardType="decimal-pad"
-                    editable={!isLoading}
-                  />
-                  <Text className="w-20 text-xs font-bold text-right" style={{ color: colors.primary }}>
-                    RM {lineTotal(item)}
-                  </Text>
-                  {formData.items.length > 1 && (
-                    <TouchableOpacity onPress={() => handleRemoveItem(index)} disabled={isLoading} className="w-8 h-8 rounded-lg items-center justify-center" style={{ backgroundColor: colors.error + '30' }}>
-                      <Text style={{ color: colors.error }} className="font-bold text-base">×</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
+            {formData.items.map((item, i) => (
+              <View key={i} className="flex-row gap-2 items-center mb-3">
+                <TextInput
+                  className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold"
+                  style={{ backgroundColor: colors.muted + '20', color: '#fff' }}
+                  placeholder="Item name"
+                  placeholderTextColor={colors.muted}
+                  value={item.name}
+                  onChangeText={(t) => updateItem(i, 'name', t)}
+                  editable={!isLoading}
+                />
+                <TextInput
+                  className="w-14 px-2 py-2 rounded-lg text-sm font-semibold text-center"
+                  style={{ backgroundColor: colors.muted + '20', color: '#fff' }}
+                  placeholder="0"
+                  placeholderTextColor={colors.muted}
+                  value={item.quantity}
+                  onChangeText={(t) => updateItem(i, 'quantity', t.replace(/[^0-9.]/g, ''))}
+                  keyboardType="decimal-pad"
+                  editable={!isLoading}
+                />
+                <TextInput
+                  className="w-20 px-2 py-2 rounded-lg text-sm font-semibold text-center"
+                  style={{ backgroundColor: colors.muted + '20', color: '#fff' }}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.muted}
+                  value={item.price}
+                  onChangeText={(t) => updateItem(i, 'price', t.replace(/[^0-9.]/g, ''))}
+                  keyboardType="decimal-pad"
+                  editable={!isLoading}
+                />
+                <Text className="w-20 text-xs font-bold text-right" style={{ color: colors.primary }}>
+                  RM {lineTotal(item)}
+                </Text>
+                {formData.items.length > 1 && (
+                  <TouchableOpacity
+                    onPress={() => removeItem(i)}
+                    disabled={isLoading}
+                    className="w-7 h-7 rounded-md items-center justify-center"
+                    style={{ backgroundColor: colors.error + '30' }}
+                  >
+                    <Text className="font-bold text-sm" style={{ color: colors.error }}>x</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ))}
 
             {/* Grand Total */}
-            <View className="flex-row justify-between items-center mt-3 pt-3 border-t" style={{ borderColor: colors.primary + '50' }}>
+            <View className="flex-row justify-between items-center mt-2 pt-3 border-t" style={{ borderColor: colors.primary + '40' }}>
               <Text className="font-bold uppercase text-sm text-white">Grand Total</Text>
-              <Text className="text-xl font-bold" style={{ color: colors.primary }}>RM {grandTotal.toFixed(2)}</Text>
+              <Text className="text-xl font-bold" style={{ color: colors.primary }}>
+                RM {grandTotal.toFixed(2)}
+              </Text>
             </View>
           </View>
 
-          {/* Notes */}
-          <View className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
+          {/* ── Notes ── */}
+          <View className="mb-5 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
             <Text className="text-xs font-bold tracking-wider uppercase mb-2" style={{ color: colors.muted }}>Notes</Text>
             <TextInput
-              className="w-full px-4 py-3 rounded-lg font-semibold"
-              style={{ backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border, borderWidth: 1, minHeight: 80, textAlignVertical: 'top' }}
-              placeholder="Add any additional notes"
+              className="w-full px-4 py-3 rounded-xl font-semibold"
+              style={{
+                backgroundColor: colors.background, color: colors.foreground,
+                borderColor: colors.border, borderWidth: 1,
+                minHeight: 80, textAlignVertical: 'top',
+              }}
+              placeholder="Additional notes (optional)"
               placeholderTextColor={colors.muted}
               value={formData.notes}
               onChangeText={(t) => setFormData({ ...formData, notes: t })}
@@ -244,26 +269,42 @@ export default function CreateReceiptScreen() {
             />
           </View>
 
-          {/* Images */}
-          <View className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
+          {/* ── Photos ── */}
+          <View className="mb-5 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
             <Text className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: colors.muted }}>
               Photos ({formData.images.length})
             </Text>
             <View className="flex-row gap-3 mb-3">
-              <TouchableOpacity onPress={handlePickImage} disabled={isLoading} className="flex-1 py-3 rounded-xl items-center justify-center" style={{ backgroundColor: colors.primary }}>
-                <Text className="text-xs font-bold uppercase text-white">🖼 Gallery</Text>
+              <TouchableOpacity
+                onPress={pickFromGallery}
+                disabled={isLoading}
+                className="flex-1 py-3 rounded-xl items-center justify-center"
+                style={{ backgroundColor: colors.primary }}
+              >
+                <Text className="text-xs font-bold uppercase text-white">Gallery</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleCameraImage} disabled={isLoading} className="flex-1 py-3 rounded-xl items-center justify-center" style={{ backgroundColor: colors.primary }}>
-                <Text className="text-xs font-bold uppercase text-white">📷 Camera</Text>
+              <TouchableOpacity
+                onPress={pickFromCamera}
+                disabled={isLoading}
+                className="flex-1 py-3 rounded-xl items-center justify-center"
+                style={{ backgroundColor: colors.primary }}
+              >
+                <Text className="text-xs font-bold uppercase text-white">Camera</Text>
               </TouchableOpacity>
             </View>
+
             {formData.images.length > 0 && (
               <View className="flex-row flex-wrap gap-2">
-                {formData.images.map((uri, index) => (
-                  <View key={index} className="relative">
+                {formData.images.map((uri, i) => (
+                  <View key={i}>
                     <Image source={{ uri }} style={{ width: 80, height: 80, borderRadius: 8 }} />
-                    <TouchableOpacity onPress={() => handleRemoveImage(index)} disabled={isLoading} className="absolute -top-2 -right-2 w-6 h-6 rounded-full items-center justify-center" style={{ backgroundColor: colors.error }}>
-                      <Text className="text-white font-bold text-xs">×</Text>
+                    <TouchableOpacity
+                      onPress={() => removeImage(i)}
+                      disabled={isLoading}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full items-center justify-center"
+                      style={{ backgroundColor: colors.error }}
+                    >
+                      <Text className="text-white font-bold text-xs">x</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -271,11 +312,11 @@ export default function CreateReceiptScreen() {
             )}
           </View>
 
-          {/* Submit */}
+          {/* ── Submit ── */}
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={isLoading}
-            className="w-full py-4 rounded-2xl items-center justify-center mb-8"
+            className="w-full py-4 rounded-2xl items-center justify-center mb-10"
             style={{ backgroundColor: colors.primary, opacity: isLoading ? 0.7 : 1 }}
           >
             {isLoading
@@ -285,6 +326,7 @@ export default function CreateReceiptScreen() {
                 </Text>
             }
           </TouchableOpacity>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>
