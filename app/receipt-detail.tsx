@@ -22,7 +22,7 @@ export default function ReceiptDetailScreen() {
       finally { setIsLoading(false); }
     };
     load();
-  }, [id]);
+  }, [id, getReceipt]);
 
   const handleDelete = () => {
     Alert.alert('Delete Receipt', 'Are you sure?', [
@@ -39,8 +39,8 @@ export default function ReceiptDetailScreen() {
 
   const fmt = (v: number) => `RM ${v.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  if (isLoading) return <ScreenContainer className="flex-1 items-center justify-center"><ActivityIndicator size="large" color={useColors().primary} /></ScreenContainer>;
-  if (!receipt) return <ScreenContainer className="flex-1 items-center justify-center"><Text style={{ color: useColors().muted }}>Receipt not found</Text></ScreenContainer>;
+  if (isLoading) return <ScreenContainer className="flex-1 items-center justify-center"><ActivityIndicator size="large" color={colors.primary} /></ScreenContainer>;
+  if (!receipt) return <ScreenContainer className="flex-1 items-center justify-center"><Text style={{ color: colors.muted }}>Receipt not found</Text></ScreenContainer>;
 
   return (
     <ScreenContainer containerClassName="flex-1" className="flex-1 p-0">
