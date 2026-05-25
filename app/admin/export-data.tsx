@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { ScreenContainer } from '@/components/screen-container';
@@ -19,11 +19,7 @@ export default function ExportDataScreen() {
   const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv');
   const [isLoading, setIsLoading] = useState(false);
 
-  const [exportHistory] = useState<ExportHistory[]>([
-    { id: '1', date: '2024-05-15', format: 'csv', recordCount: 45 },
-    { id: '2', date: '2024-05-10', format: 'pdf', recordCount: 32 },
-    { id: '3', date: '2024-05-01', format: 'csv', recordCount: 89 },
-  ]);
+  const [exportHistory] = useState<ExportHistory[]>([]);
 
   const handleExport = async () => {
     if (!fromDate || !toDate) {
@@ -145,7 +141,16 @@ export default function ExportDataScreen() {
         </Text>
 
         <View className="gap-2 pb-8">
-          {exportHistory.map((item) => (
+          {exportHistory.length === 0 ? (
+            <View className="items-center py-8">
+              <Text className="text-4xl mb-3">📄</Text>
+              <Text className="text-base font-bold" style={{ color: colors.muted }}>No exports yet</Text>
+              <Text className="text-xs mt-1 text-center" style={{ color: colors.muted }}>
+                Generate your first export above
+              </Text>
+            </View>
+          ) : (
+            exportHistory.map((item) => (
             <View key={item.id} className="p-4 rounded-2xl flex-row items-center justify-between" style={{ backgroundColor: colors.surface }}>
               <View className="flex-1">
                 <Text className="font-bold uppercase" style={{ color: colors.foreground }}>
@@ -164,7 +169,8 @@ export default function ExportDataScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          ))}
+            ))
+          )}
         </View>
       </ScrollView>
     </ScreenContainer>
