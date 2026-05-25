@@ -19,14 +19,9 @@ interface StaffMember {
   status: 'active' | 'inactive';
 }
 
-const DEFAULT_STAFF: StaffMember[] = [
-  { id: 'staff_1', name: 'John Smith',    phone: '0111111111', pin: '1111', role: 'staff', status: 'active' },
-  { id: 'staff_2', name: 'Sarah Johnson', phone: '0122222222', pin: '2222', role: 'staff', status: 'active' },
-];
-
 async function loadStaff(): Promise<StaffMember[]> {
   const raw = await AsyncStorage.getItem(STAFF_STORE_KEY);
-  return raw ? JSON.parse(raw) : DEFAULT_STAFF;
+  return raw ? JSON.parse(raw) : [];
 }
 
 async function saveStaff(list: StaffMember[]) {
@@ -167,8 +162,15 @@ export default function StaffManagementScreen() {
         <View className="flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="w-10 h-10 rounded-lg items-center justify-center"
-            style={{ backgroundColor: colors.muted + '30' }}
+            disabled={isSaving}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 8,
+              backgroundColor: colors.muted + '30',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             <Text className="text-base font-bold text-white">{'<'}</Text>
           </TouchableOpacity>
@@ -181,8 +183,15 @@ export default function StaffManagementScreen() {
         </View>
         <TouchableOpacity
           onPress={() => { setShowAddForm(!showAddForm); setErrors({ name: '', phone: '', pin: '' }); }}
-          className="w-10 h-10 rounded-lg items-center justify-center"
-          style={{ backgroundColor: colors.primary }}
+          disabled={isSaving}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 8,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
           <Text className="text-2xl font-bold text-white leading-none">{showAddForm ? 'x' : '+'}</Text>
         </TouchableOpacity>
@@ -226,8 +235,16 @@ export default function StaffManagementScreen() {
             <TouchableOpacity
               onPress={handleAddStaff}
               disabled={isSaving}
-              className="w-full py-3 rounded-xl items-center justify-center mt-2"
-              style={{ backgroundColor: colors.primary, opacity: isSaving ? 0.7 : 1 }}
+              style={{
+                width: '100%',
+                paddingVertical: 12,
+                borderRadius: 12,
+                backgroundColor: colors.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: 8,
+                opacity: isSaving ? 0.7 : 1,
+              }}
             >
               {isSaving
                 ? <ActivityIndicator color="#fff" />
@@ -284,8 +301,18 @@ export default function StaffManagementScreen() {
                 <View className="flex-row gap-2">
                   <TouchableOpacity
                     onPress={() => handleToggleStatus(member.id)}
-                    className="flex-1 py-2 rounded-lg items-center justify-center"
-                    style={{ backgroundColor: colors.primary + '15', borderColor: colors.primary, borderWidth: 1 }}
+                    disabled={isSaving}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      backgroundColor: colors.primary + '15',
+                      borderColor: colors.primary,
+                      borderWidth: 1,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: isSaving ? 0.5 : 1,
+                    }}
                   >
                     <Text className="text-xs font-bold uppercase" style={{ color: colors.primary }}>
                       {member.status === 'active' ? 'Deactivate' : 'Activate'}
@@ -293,8 +320,18 @@ export default function StaffManagementScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleDelete(member.id)}
-                    className="px-4 py-2 rounded-lg items-center justify-center"
-                    style={{ backgroundColor: colors.error + '15', borderColor: colors.error, borderWidth: 1 }}
+                    disabled={isSaving}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      backgroundColor: colors.error + '15',
+                      borderColor: colors.error,
+                      borderWidth: 1,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: isSaving ? 0.5 : 1,
+                    }}
                   >
                     <Text className="text-xs font-bold uppercase" style={{ color: colors.error }}>Remove</Text>
                   </TouchableOpacity>

@@ -126,8 +126,15 @@ export default function CreateReceiptScreen() {
       <View className="px-6 py-4 flex-row items-center gap-4" style={{ backgroundColor: colors.foreground }}>
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-10 h-10 rounded-lg items-center justify-center"
-          style={{ backgroundColor: colors.muted + '30' }}
+          disabled={isLoading}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 8,
+            backgroundColor: colors.muted + '30',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
           <Text className="text-base font-bold text-white">{'<'}</Text>
         </TouchableOpacity>
@@ -178,8 +185,14 @@ export default function CreateReceiptScreen() {
               <TouchableOpacity
                 onPress={addItem}
                 disabled={isLoading}
-                className="w-8 h-8 rounded-lg items-center justify-center"
-                style={{ backgroundColor: colors.primary }}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  backgroundColor: colors.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
                 <Text className="text-xl font-bold text-white leading-none">+</Text>
               </TouchableOpacity>
@@ -232,8 +245,14 @@ export default function CreateReceiptScreen() {
                   <TouchableOpacity
                     onPress={() => removeItem(i)}
                     disabled={isLoading}
-                    className="w-7 h-7 rounded-md items-center justify-center"
-                    style={{ backgroundColor: colors.error + '30' }}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 6,
+                      backgroundColor: colors.error + '30',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                   >
                     <Text className="font-bold text-sm" style={{ color: colors.error }}>x</Text>
                   </TouchableOpacity>
@@ -278,16 +297,30 @@ export default function CreateReceiptScreen() {
               <TouchableOpacity
                 onPress={pickFromGallery}
                 disabled={isLoading}
-                className="flex-1 py-3 rounded-xl items-center justify-center"
-                style={{ backgroundColor: colors.primary }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  backgroundColor: colors.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: isLoading ? 0.5 : 1,
+                }}
               >
                 <Text className="text-xs font-bold uppercase text-white">Gallery</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={pickFromCamera}
                 disabled={isLoading}
-                className="flex-1 py-3 rounded-xl items-center justify-center"
-                style={{ backgroundColor: colors.primary }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  backgroundColor: colors.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: isLoading ? 0.5 : 1,
+                }}
               >
                 <Text className="text-xs font-bold uppercase text-white">Camera</Text>
               </TouchableOpacity>
@@ -301,8 +334,17 @@ export default function CreateReceiptScreen() {
                     <TouchableOpacity
                       onPress={() => removeImage(i)}
                       disabled={isLoading}
-                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full items-center justify-center"
-                      style={{ backgroundColor: colors.error }}
+                      style={{
+                        position: 'absolute',
+                        top: -8,
+                        right: -8,
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                        backgroundColor: colors.error,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
                     >
                       <Text className="text-white font-bold text-xs">x</Text>
                     </TouchableOpacity>
@@ -316,8 +358,16 @@ export default function CreateReceiptScreen() {
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={isLoading}
-            className="w-full py-4 rounded-2xl items-center justify-center mb-10"
-            style={{ backgroundColor: colors.primary, opacity: isLoading ? 0.7 : 1 }}
+            style={{
+              width: '100%',
+              paddingVertical: 16,
+              borderRadius: 16,
+              backgroundColor: colors.primary,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 40,
+              opacity: isLoading ? 0.7 : 1,
+            }}
           >
             {isLoading
               ? <ActivityIndicator color="#fff" />
