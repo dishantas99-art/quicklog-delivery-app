@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
@@ -14,7 +14,7 @@ export default function StaffHomeScreen() {
   const colors = useColors();
   const router = useRouter();
 
-  useEffect(() => { refreshReceipts(); }, []);
+  useEffect(() => { refreshReceipts(); }, [refreshReceipts]);
 
   const total     = receipts.length;
   const completed = receipts.filter((r) => r.status === 'completed').length;

@@ -11,12 +11,10 @@ export default function AdminDashboardScreen() {
   const colors = useColors();
   const router = useRouter();
   const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     receiptStorage.getAllReceipts().then((all) => {
       setReceipts(all);
-      setIsLoading(false);
     });
   }, []);
 

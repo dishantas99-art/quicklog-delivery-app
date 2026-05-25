@@ -2,7 +2,7 @@ import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform } from "react-native";
@@ -16,7 +16,7 @@ import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from "react-native-safe-area-context";
-import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
+import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -40,7 +40,7 @@ function RootLayoutContent() {
 
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
   const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
-  const [insets, setInsets] = useState<EdgeInsets>(initialInsets);
+  const [insets] = useState<EdgeInsets>(initialInsets);
   const [frame] = useState<Rect>(initialFrame);
 
   const [queryClient] = useState(
