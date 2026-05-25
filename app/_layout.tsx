@@ -73,6 +73,12 @@ function RootLayoutContent() {
             <Stack.Screen name="login" options={{}} />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="oauth/callback" />
+            <Stack.Screen name="create-receipt" />
+            <Stack.Screen name="receipt-detail" />
+            <Stack.Screen name="admin-dashboard" />
+            <Stack.Screen name="admin/all-receipts" />
+            <Stack.Screen name="admin/staff-management" />
+            <Stack.Screen name="admin/export-data" />
           </Stack>
           <StatusBar style="auto" />
         </QueryClientProvider>
