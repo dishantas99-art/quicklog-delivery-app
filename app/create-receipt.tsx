@@ -3,13 +3,21 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { useColors } from '@/hooks/use-colors';
 import { useAuth } from '@/lib/auth-context';
 import { useReceipts } from '@/lib/receipt-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { useRouter } from 'expo-router';
 import { computeTotal, type ReceiptItem } from '@/lib/storage-service';
+
+
+async function getImagePickerModule() {
+  try {
+    return await import('expo-image-picker');
+  } catch {
+    throw new Error('Image picker is unavailable in this build. Please reinstall/update the app build.');
+  }
+}
 
 interface FormData {
   customerName: string;
@@ -48,6 +56,14 @@ export default function CreateReceiptScreen() {
   };
 
   const pickFromGallery = async () => {
+    let ImagePicker;
+    try {
+      ImagePicker = await getImagePickerModule();
+    } catch (error) {
+      Alert.alert('Module Missing', error instanceof Error ? error.message : 'Image picker module is missing.');
+      return;
+    }
+
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow access to your photo library.');
@@ -64,6 +80,14 @@ export default function CreateReceiptScreen() {
   };
 
   const pickFromCamera = async () => {
+    let ImagePicker;
+    try {
+      ImagePicker = await getImagePickerModule();
+    } catch (error) {
+      Alert.alert('Module Missing', error instanceof Error ? error.message : 'Image picker module is missing.');
+      return;
+    }
+
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow camera access.');

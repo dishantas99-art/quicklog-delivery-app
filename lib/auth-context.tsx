@@ -20,13 +20,25 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const STAFF_STORE_KEY = '@quicklog_staff_accounts';
 
-// Demo accounts — replace with real API auth in production
-const ACCOUNTS: Array<User & { pin: string }> = [
+const DEFAULT_ACCOUNTS: Array<User & { pin: string }> = [
   { id: 'admin_1', phone: '0100000000', pin: '1234', name: 'Admin User', role: 'admin' },
   { id: 'staff_1', phone: '0111111111', pin: '1111', name: 'John Smith', role: 'staff' },
   { id: 'staff_2', phone: '0122222222', pin: '2222', name: 'Sarah Johnson', role: 'staff' },
 ];
+
+async function getStaffAccounts(): Promise<Array<User & { pin: string }>> {
+  try {
+    const raw = await AsyncStorage.getItem(STAFF_STORE_KEY);
+    if (!raw) return DEFAULT_ACCOUNTS;
+    const parsed = JSON.parse(raw) as Array<User & { pin: string }>;
+    if (!Array.isArray(parsed)) return DEFAULT_ACCOUNTS;
+    return [DEFAULT_ACCOUNTS[0], ...parsed.filter((s) => s.role === 'staff')];
+  } catch {
+    return DEFAULT_ACCOUNTS;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -50,8 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (phone: string, pin: string) => {
     setIsLoading(true);
     try {
-      const account = ACCOUNTS.find(
-        (a) => a.phone === phone.trim() && a.pin === pin.trim()
+      const accounts = await getStaffAccounts();
+      const account = accounts.find(
+        (a) => a.phone === phone.trim() && a.pin === pin.trim(),
       );
       if (!account) throw new Error('Invalid phone number or PIN');
       const { pin: _pin, ...loggedInUser } = account;

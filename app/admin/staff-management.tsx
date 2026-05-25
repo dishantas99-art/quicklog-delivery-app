@@ -25,8 +25,15 @@ const DEFAULT_STAFF: StaffMember[] = [
 ];
 
 async function loadStaff(): Promise<StaffMember[]> {
-  const raw = await AsyncStorage.getItem(STAFF_STORE_KEY);
-  return raw ? JSON.parse(raw) : DEFAULT_STAFF;
+  try {
+    const raw = await AsyncStorage.getItem(STAFF_STORE_KEY);
+    if (!raw) return DEFAULT_STAFF;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_STAFF;
+    return parsed.filter((item) => item && item.role === 'staff');
+  } catch {
+    return DEFAULT_STAFF;
+  }
 }
 
 async function saveStaff(list: StaffMember[]) {
@@ -50,7 +57,13 @@ export default function StaffManagementScreen() {
       const members = await loadStaff();
       // Count receipts per staff from AsyncStorage
       const raw = await AsyncStorage.getItem('@quicklog_receipts');
-      const receipts: Receipt[] = raw ? JSON.parse(raw) : [];
+      let receipts: Receipt[] = [];
+      try {
+        const parsed = raw ? JSON.parse(raw) : [];
+        receipts = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        receipts = [];
+      }
       const counts: Record<string, number> = {};
       for (const r of receipts) counts[r.staffId] = (counts[r.staffId] || 0) + 1;
       setReceiptCounts(counts);
