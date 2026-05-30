@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export const STAFF_STORE_KEY = '@quicklog_staff';
 export type UserRole = 'admin' | 'staff';
 
 export interface User {

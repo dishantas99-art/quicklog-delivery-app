@@ -60,7 +60,7 @@ export const receiptStorage = {
     } catch { return null; }
   },
 
-  async createReceipt(receipt: Omit<Receipt, 'id' | 'createdAt' | 'updatedAt'>): Promise<Receipt> {
+  async createReceipt(receipt: Omit<Receipt, 'id' | 'createdAt' | 'updatedAt' | 'totalAmount'>): Promise<Receipt> {
     const data = await AsyncStorage.getItem(RECEIPTS_KEY);
     const receipts: Receipt[] = data ? JSON.parse(data) : [];
     const newReceipt: Receipt = {

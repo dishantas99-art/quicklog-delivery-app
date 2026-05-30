@@ -29,10 +29,14 @@ export default function ExportDataScreen() {
 
     setIsLoading(true);
     try {
-      // TODO: Call backend API to generate export
+      const { createTRPCClient } = await import('@/lib/trpc');
+      const client = createTRPCClient();
+      const result = await client.export.generate.mutate({ fromDate, toDate, format: exportFormat });
+      
       console.log('Exporting data:', { fromDate, toDate, format: exportFormat });
-      alert(`Export generated successfully!\nFormat: ${exportFormat.toUpperCase()}\nRecords: 156`);
+      alert(`Export generated successfully!\nFormat: ${exportFormat.toUpperCase()}\nRecords: ${result.recordCount}\nURL: ${result.url}`);
     } catch (error) {
+      console.error('Export failed:', error);
       alert('Failed to generate export');
     } finally {
       setIsLoading(false);
