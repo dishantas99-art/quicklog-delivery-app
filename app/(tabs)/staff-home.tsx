@@ -16,24 +16,26 @@ export default function StaffHomeScreen() {
 
   useEffect(() => { refreshReceipts(); }, []);
 
-  const total     = receipts.length;
-  const completed = receipts.filter((r) => r.status === 'completed').length;
-  const pending   = receipts.filter((r) => r.status === 'pending' || r.status === 'draft').length;
+  // Filter receipts for current staff member
+  const staffReceipts = receipts.filter((r) => r.staffId === user?.id);
+  const total     = staffReceipts.length;
+  const completed = staffReceipts.filter((r) => r.status === 'completed').length;
+  const pending   = staffReceipts.filter((r) => r.status === 'pending' || r.status === 'draft').length;
 
   const now = new Date();
-  const todayCount = receipts.filter((r) => {
+  const todayCount = staffReceipts.filter((r) => {
     const d = new Date(r.createdAt);
     return d.getDate() === now.getDate() &&
       d.getMonth() === now.getMonth() &&
       d.getFullYear() === now.getFullYear();
   }).length;
 
-  const thisMonthCount = receipts.filter((r) => {
+  const thisMonthCount = staffReceipts.filter((r) => {
     const d = new Date(r.createdAt);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
-  const recent = [...receipts]
+  const recent = [...staffReceipts]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 10);
 
@@ -143,7 +145,7 @@ export default function StaffHomeScreen() {
           <View className="items-center py-12">
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
-        ) : receipts.length === 0 ? (
+        ) : staffReceipts.length === 0 ? (
           <View className="items-center py-12">
             <Text className="text-4xl mb-3">📦</Text>
             <Text className="text-base font-bold" style={{ color: colors.muted }}>No receipts yet</Text>
@@ -199,9 +201,9 @@ export default function StaffHomeScreen() {
               </TouchableOpacity>
             ))}
 
-            {receipts.length > 10 && (
+            {staffReceipts.length > 10 && (
               <Text className="text-xs text-center py-2" style={{ color: colors.muted }}>
-                Showing 10 of {receipts.length} receipts
+                Showing 10 of {staffReceipts.length} receipts
               </Text>
             )}
           </View>

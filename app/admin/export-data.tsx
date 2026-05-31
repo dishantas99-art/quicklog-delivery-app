@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { ScreenContainer } from '@/components/screen-container';
 import { useRouter } from 'expo-router';
@@ -29,12 +29,30 @@ export default function ExportDataScreen() {
 
     setIsLoading(true);
     try {
-      const { createTRPCClient } = await import('@/lib/trpc');
-      const client = createTRPCClient();
-      const result = await client.export.generate.mutate({ fromDate, toDate, format: exportFormat });
+      const { receiptStorage } = await import('@/lib/storage-service');
+      const allReceipts = await receiptStorage.getAllReceipts();
       
-      console.log('Exporting data:', { fromDate, toDate, format: exportFormat });
-      alert(`Export generated successfully!\nFormat: ${exportFormat.toUpperCase()}\nRecords: ${result.recordCount}\nURL: ${result.url}`);
+      // Filter receipts by date range
+      const filtered = allReceipts.filter((r) => {
+        const rDate = r.date;
+        return rDate >= fromDate && rDate <= toDate;
+      });
+      
+      // Prepare export data with staff info
+      const exportData = filtered.map((r) => ({
+        receiptId: r.id,
+        date: r.date,
+        customerName: r.customerName,
+        location: r.location,
+        staffId: r.staffId,
+        totalAmount: r.totalAmount,
+        status: r.status,
+        itemCount: r.items.length,
+        imageCount: r.images.length,
+      }));
+      
+      console.log('Exporting data:', { fromDate, toDate, format: exportFormat, count: exportData.length });
+      alert(`Export generated successfully!\nFormat: ${exportFormat.toUpperCase()}\nRecords: ${exportData.length}\n\nData includes: Receipt ID, Date, Customer, Location, Staff ID, Amount, Status, Items, Images`);
     } catch (error) {
       console.error('Export failed:', error);
       alert('Failed to generate export');

@@ -48,6 +48,10 @@ export default function CreateReceiptScreen() {
   };
 
   const pickFromGallery = async () => {
+    if (formData.images.length >= 7) {
+      Alert.alert('Image Limit', 'You can add up to 7 images per receipt.');
+      return;
+    }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow access to your photo library.');
@@ -64,6 +68,10 @@ export default function CreateReceiptScreen() {
   };
 
   const pickFromCamera = async () => {
+    if (formData.images.length >= 7) {
+      Alert.alert('Image Limit', 'You can add up to 7 images per receipt.');
+      return;
+    }
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow camera access.');
@@ -91,6 +99,14 @@ export default function CreateReceiptScreen() {
     const validItems = formData.items.filter((item) => item.name.trim() && item.quantity.trim());
     if (validItems.length === 0) {
       Alert.alert('Validation Error', 'Please add at least one item with a name and quantity.');
+      return;
+    }
+    if (formData.images.length < 5) {
+      Alert.alert('Validation Error', `Please add at least 5 images. Currently: ${formData.images.length}/5-7`);
+      return;
+    }
+    if (formData.images.length > 7) {
+      Alert.alert('Validation Error', 'Maximum 7 images allowed per receipt.');
       return;
     }
     setIsLoading(true);
@@ -290,9 +306,21 @@ export default function CreateReceiptScreen() {
 
           {/* ── Photos ── */}
           <View className="mb-5 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
-            <Text className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: colors.muted }}>
-              Photos ({formData.images.length})
-            </Text>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-xs font-bold tracking-wider uppercase" style={{ color: colors.muted }}>
+                Photos ({formData.images.length}/5-7)
+              </Text>
+              {formData.images.length < 5 && (
+                <Text className="text-xs font-semibold" style={{ color: colors.warning }}>
+                  {5 - formData.images.length} more required
+                </Text>
+              )}
+              {formData.images.length >= 5 && (
+                <Text className="text-xs font-semibold" style={{ color: colors.success }}>
+                  ✓ Complete
+                </Text>
+              )}
+            </View>
             <View className="flex-row gap-3 mb-3">
               <TouchableOpacity
                 onPress={pickFromGallery}

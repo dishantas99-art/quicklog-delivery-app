@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/lib/auth-context';
 import { useColors } from '@/hooks/use-colors';
 import { ScreenContainer } from '@/components/screen-container';
@@ -11,24 +12,58 @@ export default function AdminDashboardScreen() {
   const colors = useColors();
   const router = useRouter();
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [staffCount, setStaffCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    receiptStorage.getAllReceipts().then((all) => {
+    const loadData = async () => {
+      const all = await receiptStorage.getAllReceipts();
       setReceipts(all);
+      
+      // Load staff count from AsyncStorage
+      try {
+        const staffData = await AsyncStorage.getItem('@quicklog_staff');
+        if (staffData) {
+          const staff = JSON.parse(staffData);
+          setStaffCount(Array.isArray(staff) ? staff.length : 0);
+        }
+      } catch (err) {
+        console.error('Failed to load staff count:', err);
+      }
+      
       setIsLoading(false);
-    });
+    };
+    loadData();
   }, []);
 
   const totalRevenue = receipts.reduce((s, r) => s + (r.totalAmount || 0), 0);
   const completedCount = receipts.filter((r) => r.status === 'completed').length;
   const unsyncedCount = receipts.filter((r) => !r.synced).length;
   const now = new Date();
+  
+  // Revenue by day
+  const todayReceipts = receipts.filter((r) => {
+    const d = new Date(r.createdAt);
+    return d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear();
+  });
+  const todayRevenue = todayReceipts.reduce((s, r) => s + (r.totalAmount || 0), 0);
+  
+  // Revenue by month
   const thisMonthReceipts = receipts.filter((r) => {
     const d = new Date(r.createdAt);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
   const thisMonthRevenue = thisMonthReceipts.reduce((s, r) => s + (r.totalAmount || 0), 0);
+  
+  // Revenue by year
+  const thisYearReceipts = receipts.filter((r) => {
+    const d = new Date(r.createdAt);
+    return d.getFullYear() === now.getFullYear();
+  });
+  const thisYearRevenue = thisYearReceipts.reduce((s, r) => s + (r.totalAmount || 0), 0);
+  
   const avgOrder = receipts.length > 0 ? totalRevenue / receipts.length : 0;
 
   // Top items by revenue
@@ -73,10 +108,10 @@ export default function AdminDashboardScreen() {
         <View className="mb-4 p-4 rounded-2xl" style={{ backgroundColor: colors.primary }}>
           <Text className="text-xs font-bold uppercase text-white opacity-70">Total Revenue</Text>
           <Text className="text-3xl font-bold text-white mt-1">{fmt(totalRevenue)}</Text>
-          <View className="flex-row gap-6 mt-3">
+          <View className="flex-row gap-4 mt-3 flex-wrap">
+            <View><Text className="text-xs text-white opacity-70">Today</Text><Text className="text-base font-bold text-white">{fmt(todayRevenue)}</Text></View>
             <View><Text className="text-xs text-white opacity-70">This Month</Text><Text className="text-base font-bold text-white">{fmt(thisMonthRevenue)}</Text></View>
-            <View><Text className="text-xs text-white opacity-70">Avg Order</Text><Text className="text-base font-bold text-white">{fmt(avgOrder)}</Text></View>
-            <View><Text className="text-xs text-white opacity-70">Mo. Orders</Text><Text className="text-base font-bold text-white">{thisMonthReceipts.length}</Text></View>
+            <View><Text className="text-xs text-white opacity-70">This Year</Text><Text className="text-base font-bold text-white">{fmt(thisYearRevenue)}</Text></View>
           </View>
         </View>
 
@@ -89,14 +124,14 @@ export default function AdminDashboardScreen() {
               <Text className="text-2xl font-bold mt-2" style={{ color: colors.primary }}>{receipts.length}</Text>
             </View>
             <View className="flex-1 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
-              <Text className="text-xs font-bold uppercase" style={{ color: colors.muted }}>Completed</Text>
-              <Text className="text-2xl font-bold mt-2" style={{ color: colors.success }}>{completedCount}</Text>
+              <Text className="text-xs font-bold uppercase" style={{ color: colors.muted }}>Total Staff</Text>
+              <Text className="text-2xl font-bold mt-2" style={{ color: colors.warning }}>{staffCount}</Text>
             </View>
           </View>
           <View className="flex-row gap-3">
             <View className="flex-1 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
-              <Text className="text-xs font-bold uppercase" style={{ color: colors.muted }}>Unsynced</Text>
-              <Text className="text-2xl font-bold mt-2" style={{ color: unsyncedCount > 0 ? colors.warning : colors.success }}>{unsyncedCount}</Text>
+              <Text className="text-xs font-bold uppercase" style={{ color: colors.muted }}>Today</Text>
+              <Text className="text-2xl font-bold mt-2" style={{ color: colors.success }}>{todayReceipts.length}</Text>
             </View>
             <View className="flex-1 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
               <Text className="text-xs font-bold uppercase" style={{ color: colors.muted }}>This Month</Text>
