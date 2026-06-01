@@ -64,10 +64,11 @@ export default function AllReceiptsScreen() {
             : <View className="gap-2 pb-8">
                 {filtered.map((r) => (
                   <TouchableOpacity key={r.id} onPress={() => router.push(`/receipt-detail?id=${r.id}`)} className="p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
-                    <View className="flex-row items-start justify-between mb-1">
+                    <View className="flex-row items-start justify-between mb-2">
                       <View className="flex-1">
                         <Text className="font-bold uppercase" style={{ color: colors.foreground }}>{r.customerName}</Text>
                         <Text className="text-xs mt-1" style={{ color: colors.muted }}>{r.location} · {r.date}</Text>
+                        <Text className="text-xs mt-1" style={{ color: colors.muted }}>👤 Staff: {r.staffId}</Text>
                       </View>
                       <View className="items-end gap-1">
                         <Text className="font-bold text-sm" style={{ color: colors.primary }}>{fmt(r.totalAmount || 0)}</Text>
@@ -77,7 +78,7 @@ export default function AllReceiptsScreen() {
                       </View>
                     </View>
                     <View className="flex-row justify-between">
-                      <Text className="text-xs" style={{ color: colors.muted }}>{r.items.length} item{r.items.length !== 1 ? 's' : ''}</Text>
+                      <Text className="text-xs" style={{ color: colors.muted }}>{r.items.length} item{r.items.length !== 1 ? 's' : ''} · {r.images.length} photo{r.images.length !== 1 ? 's' : ''}</Text>
                       {!r.synced && <Text className="text-xs" style={{ color: colors.warning }}>⏳ Unsynced</Text>}
                     </View>
                   </TouchableOpacity>

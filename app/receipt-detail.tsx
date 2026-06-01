@@ -69,6 +69,7 @@ export default function ReceiptDetailScreen() {
           <View className="gap-2 pt-4 border-t" style={{ borderColor: colors.border }}>
             <View className="flex-row justify-between"><Text style={{ color: colors.muted }}>📍 Location:</Text><Text className="font-semibold flex-1 text-right ml-2" style={{ color: colors.foreground }}>{receipt.location}</Text></View>
             <View className="flex-row justify-between"><Text style={{ color: colors.muted }}>📅 Date:</Text><Text className="font-semibold" style={{ color: colors.foreground }}>{receipt.date}</Text></View>
+            <View className="flex-row justify-between"><Text style={{ color: colors.muted }}>👤 Staff ID:</Text><Text className="font-semibold" style={{ color: colors.foreground }}>{receipt.staffId}</Text></View>
             <View className="flex-row justify-between"><Text style={{ color: colors.muted }}>🕐 Created:</Text><Text className="font-semibold text-xs" style={{ color: colors.foreground }}>{new Date(receipt.createdAt).toLocaleString()}</Text></View>
           </View>
         </View>
@@ -136,9 +137,14 @@ export default function ReceiptDetailScreen() {
         )}
 
         {/* Actions */}
-        <TouchableOpacity onPress={handleDelete} className="w-full py-3 rounded-lg items-center justify-center mb-8" style={{ backgroundColor: colors.error + '20', borderColor: colors.error, borderWidth: 1 }}>
-          <Text className="text-sm font-bold uppercase" style={{ color: colors.error }}>Delete Receipt</Text>
-        </TouchableOpacity>
+        <View className="flex-row gap-3 mb-8">
+          <TouchableOpacity onPress={() => router.back()} className="flex-1 py-3 rounded-lg items-center justify-center" style={{ backgroundColor: colors.primary + '20', borderColor: colors.primary, borderWidth: 1 }}>
+            <Text className="text-sm font-bold uppercase" style={{ color: colors.primary }}>Back</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDelete} className="flex-1 py-3 rounded-lg items-center justify-center" style={{ backgroundColor: colors.error + '20', borderColor: colors.error, borderWidth: 1 }}>
+            <Text className="text-sm font-bold uppercase" style={{ color: colors.error }}>Delete</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </ScreenContainer>
   );
