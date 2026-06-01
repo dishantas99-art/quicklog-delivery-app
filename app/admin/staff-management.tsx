@@ -36,6 +36,7 @@ export default function StaffManagementScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newStaff, setNewStaff] = useState({ name: '', phone: '', pin: '' });
   const [errors, setErrors] = useState({ name: '', phone: '', pin: '' });
 
@@ -60,7 +61,7 @@ export default function StaffManagementScreen() {
     let valid = true;
     if (!newStaff.name.trim()) { errs.name = 'Name is required'; valid = false; }
     if (!newStaff.phone.trim()) { errs.phone = 'Phone is required'; valid = false; }
-    else if (staff.some((s) => s.phone === newStaff.phone.trim())) { errs.phone = 'Phone already exists'; valid = false; }
+    else if (staff.some((s) => s.phone === newStaff.phone.trim() && s.id !== editingId)) { errs.phone = 'Phone already exists'; valid = false; }
     if (!newStaff.pin.trim()) { errs.pin = 'PIN is required'; valid = false; }
     else if (newStaff.pin.length !== 4 || !/^\d+$/.test(newStaff.pin)) { errs.pin = 'PIN must be exactly 4 digits'; valid = false; }
     setErrors(errs);
@@ -71,26 +72,45 @@ export default function StaffManagementScreen() {
     if (!validate()) return;
     setIsSaving(true);
     try {
-      const member: StaffMember = {
-        id: `staff_${Date.now()}`,
-        name: newStaff.name.trim(),
-        phone: newStaff.phone.trim(),
-        pin: newStaff.pin.trim(),
-        role: 'staff',
-        status: 'active',
-      };
-      const updated = [...staff, member];
-      await saveStaff(updated);
-      setStaff(updated);
+      if (editingId) {
+        // Update existing staff
+        const updated = staff.map((s) =>
+          s.id === editingId
+            ? {
+              ...s,
+              name: newStaff.name.trim(),
+              phone: newStaff.phone.trim(),
+              pin: newStaff.pin.trim(),
+            }
+            : s,
+        );
+        await saveStaff(updated);
+        setStaff(updated);
+        Alert.alert('Staff Updated', `${newStaff.name} has been updated.`);
+        setEditingId(null);
+      } else {
+        // Add new staff
+        const member: StaffMember = {
+          id: `staff_${Date.now()}`,
+          name: newStaff.name.trim(),
+          phone: newStaff.phone.trim(),
+          pin: newStaff.pin.trim(),
+          role: 'staff',
+          status: 'active',
+        };
+        const updated = [...staff, member];
+        await saveStaff(updated);
+        setStaff(updated);
+        Alert.alert(
+          'Staff Added',
+          `${member.name} can now log in.\n\nPhone: ${member.phone}\nPIN: ${member.pin}`,
+        );
+      }
       setNewStaff({ name: '', phone: '', pin: '' });
       setErrors({ name: '', phone: '', pin: '' });
       setShowAddForm(false);
-      Alert.alert(
-        'Staff Added',
-        `${member.name} can now log in.\n\nPhone: ${member.phone}\nPIN: ${member.pin}`,
-      );
     } catch {
-      Alert.alert('Error', 'Failed to add staff member');
+      Alert.alert('Error', editingId ? 'Failed to update staff member' : 'Failed to add staff member');
     } finally {
       setIsSaving(false);
     }
@@ -102,6 +122,12 @@ export default function StaffManagementScreen() {
     );
     setStaff(updated);
     await saveStaff(updated);
+  };
+
+  const handleEdit = (member: StaffMember) => {
+    setEditingId(member.id);
+    setNewStaff({ name: member.name, phone: member.phone, pin: member.pin });
+    setShowAddForm(true);
   };
 
   const handleDelete = (id: string) => {
@@ -199,11 +225,11 @@ export default function StaffManagementScreen() {
 
       <ScrollView className="flex-1 px-6 py-4" keyboardShouldPersistTaps="handled">
 
-        {/* Add Staff Form */}
+        {/* Add/Edit Staff Form */}
         {showAddForm && (
           <View className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
             <Text className="text-xs font-bold tracking-wider uppercase mb-4" style={{ color: colors.muted }}>
-              New Staff Member
+              {editingId ? 'Edit Staff Member' : 'New Staff Member'}
             </Text>
 
             <Field
@@ -232,25 +258,50 @@ export default function StaffManagementScreen() {
               error={errors.pin}
             />
 
-            <TouchableOpacity
-              onPress={handleAddStaff}
-              disabled={isSaving}
-              style={{
-                width: '100%',
-                paddingVertical: 12,
-                borderRadius: 12,
-                backgroundColor: colors.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: 8,
-                opacity: isSaving ? 0.7 : 1,
-              }}
-            >
-              {isSaving
-                ? <ActivityIndicator color="#fff" />
-                : <Text className="text-sm font-bold uppercase tracking-wider text-white">Add Staff Member</Text>
-              }
-            </TouchableOpacity>
+            <View className="flex-row gap-2 mt-2">
+              <TouchableOpacity
+                onPress={handleAddStaff}
+                disabled={isSaving}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  backgroundColor: colors.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: isSaving ? 0.7 : 1,
+                }}
+              >
+                {isSaving
+                  ? <ActivityIndicator color="#fff" />
+                  : <Text className="text-sm font-bold uppercase tracking-wider text-white">
+                    {editingId ? 'Update' : 'Add'}
+                  </Text>
+                }
+              </TouchableOpacity>
+              {editingId && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setEditingId(null);
+                    setNewStaff({ name: '', phone: '', pin: '' });
+                    setErrors({ name: '', phone: '', pin: '' });
+                    setShowAddForm(false);
+                  }}
+                  disabled={isSaving}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    backgroundColor: colors.muted + '20',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: isSaving ? 0.7 : 1,
+                  }}
+                >
+                  <Text className="text-sm font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Cancel</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 
@@ -300,7 +351,7 @@ export default function StaffManagementScreen() {
                 {/* Action row */}
                 <View className="flex-row gap-2">
                   <TouchableOpacity
-                    onPress={() => handleToggleStatus(member.id)}
+                    onPress={() => handleEdit(member)}
                     disabled={isSaving}
                     style={{
                       flex: 1,
@@ -314,7 +365,24 @@ export default function StaffManagementScreen() {
                       opacity: isSaving ? 0.5 : 1,
                     }}
                   >
-                    <Text className="text-xs font-bold uppercase" style={{ color: colors.primary }}>
+                    <Text className="text-xs font-bold uppercase" style={{ color: colors.primary }}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleToggleStatus(member.id)}
+                    disabled={isSaving}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      backgroundColor: colors.warning + '15',
+                      borderColor: colors.warning,
+                      borderWidth: 1,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: isSaving ? 0.5 : 1,
+                    }}
+                  >
+                    <Text className="text-xs font-bold uppercase" style={{ color: colors.warning }}>
                       {member.status === 'active' ? 'Deactivate' : 'Activate'}
                     </Text>
                   </TouchableOpacity>
@@ -322,7 +390,7 @@ export default function StaffManagementScreen() {
                     onPress={() => handleDelete(member.id)}
                     disabled={isSaving}
                     style={{
-                      paddingHorizontal: 16,
+                      paddingHorizontal: 12,
                       paddingVertical: 8,
                       borderRadius: 8,
                       backgroundColor: colors.error + '15',
@@ -333,7 +401,7 @@ export default function StaffManagementScreen() {
                       opacity: isSaving ? 0.5 : 1,
                     }}
                   >
-                    <Text className="text-xs font-bold uppercase" style={{ color: colors.error }}>Remove</Text>
+                    <Text className="text-xs font-bold uppercase" style={{ color: colors.error }}>Delete</Text>
                   </TouchableOpacity>
                 </View>
               </View>
