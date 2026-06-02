@@ -23,6 +23,7 @@ const MAPPING = {
   "plus.circle.fill": "add-circle",
   "gear": "settings",
   "square.and.arrow.up": "share",
+  "clipboard.fill": "assignment",
 } as IconMapping;
 
 /**
