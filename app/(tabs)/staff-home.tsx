@@ -213,8 +213,17 @@ export default function StaffHomeScreen() {
       {/* FAB */}
       <TouchableOpacity
         onPress={() => router.push('/create-receipt')}
-        className="absolute bottom-8 right-6 w-16 h-16 rounded-2xl items-center justify-center"
-        style={{ backgroundColor: colors.primary }}
+        style={{
+          position: 'absolute',
+          bottom: 32,
+          right: 24,
+          width: 64,
+          height: 64,
+          borderRadius: 16,
+          backgroundColor: colors.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
         <Text className="text-3xl font-bold text-white leading-none">+</Text>
       </TouchableOpacity>

@@ -28,6 +28,47 @@ async function saveStaff(list: StaffMember[]) {
   await AsyncStorage.setItem(STAFF_STORE_KEY, JSON.stringify(list));
 }
 
+interface FieldProps {
+  label: string;
+  value: string;
+  onChange: (t: string) => void;
+  placeholder: string;
+  keyboardType?: any;
+  secureTextEntry?: boolean;
+  error?: string;
+  maxLength?: number;
+  colors: any;
+  isSaving: boolean;
+}
+
+function Field({
+  label, value, onChange, placeholder, keyboardType = 'default', secureTextEntry = false, error = '', maxLength, colors, isSaving,
+}: FieldProps) {
+  return (
+    <View className="mb-4">
+      <Text className="text-xs font-bold tracking-wider uppercase mb-1" style={{ color: colors.muted }}>{label}</Text>
+      <TextInput
+        className="w-full px-4 py-3 rounded-xl font-semibold"
+        style={{
+          backgroundColor: colors.background,
+          color: colors.foreground,
+          borderColor: error ? colors.error : colors.border,
+          borderWidth: 1,
+        }}
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        value={value}
+        onChangeText={onChange}
+        keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        maxLength={maxLength}
+        editable={!isSaving}
+      />
+      {!!error && <Text className="text-xs mt-1" style={{ color: colors.error }}>{error}</Text>}
+    </View>
+  );
+}
+
 export default function StaffManagementScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -150,35 +191,6 @@ export default function StaffManagementScreen() {
     );
   };
 
-  const Field = ({
-    label, value, onChange, placeholder, keyboardType = 'default', secureTextEntry = false, error = '', maxLength,
-  }: {
-    label: string; value: string; onChange: (t: string) => void; placeholder: string;
-    keyboardType?: any; secureTextEntry?: boolean; error?: string; maxLength?: number;
-  }) => (
-    <View className="mb-4">
-      <Text className="text-xs font-bold tracking-wider uppercase mb-1" style={{ color: colors.muted }}>{label}</Text>
-      <TextInput
-        className="w-full px-4 py-3 rounded-xl font-semibold"
-        style={{
-          backgroundColor: colors.background,
-          color: colors.foreground,
-          borderColor: error ? colors.error : colors.border,
-          borderWidth: 1,
-        }}
-        placeholder={placeholder}
-        placeholderTextColor={colors.muted}
-        value={value}
-        onChangeText={onChange}
-        keyboardType={keyboardType}
-        secureTextEntry={secureTextEntry}
-        maxLength={maxLength}
-        editable={!isSaving}
-      />
-      {!!error && <Text className="text-xs mt-1" style={{ color: colors.error }}>{error}</Text>}
-    </View>
-  );
-
   const activeCount = staff.filter((s) => s.status === 'active').length;
 
   return (
@@ -238,6 +250,8 @@ export default function StaffManagementScreen() {
               value={newStaff.name}
               onChange={(t) => setNewStaff({ ...newStaff, name: t })}
               error={errors.name}
+              colors={colors}
+              isSaving={isSaving}
             />
             <Field
               label="Phone Number"
@@ -246,6 +260,8 @@ export default function StaffManagementScreen() {
               onChange={(t) => setNewStaff({ ...newStaff, phone: t.replace(/\D/g, '') })}
               keyboardType="phone-pad"
               error={errors.phone}
+              colors={colors}
+              isSaving={isSaving}
             />
             <Field
               label="PIN (4 digits)"
@@ -256,6 +272,8 @@ export default function StaffManagementScreen() {
               secureTextEntry
               maxLength={4}
               error={errors.pin}
+              colors={colors}
+              isSaving={isSaving}
             />
 
             <View className="flex-row gap-2 mt-2">
