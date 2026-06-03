@@ -3,7 +3,6 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { useColors } from '@/hooks/use-colors';
 import { useAuth } from '@/lib/auth-context';
 import { useReceipts } from '@/lib/receipt-context';
@@ -19,6 +18,20 @@ interface FormData {
   items: ReceiptItem[];
   images: string[];
 }
+
+// Lazy-load ImagePicker to avoid crashing in Expo Go without the native module
+let ImagePickerModule: any = null;
+const loadImagePicker = async () => {
+  if (!ImagePickerModule) {
+    try {
+      ImagePickerModule = await import('expo-image-picker');
+    } catch (err) {
+      console.warn('expo-image-picker not available. Use a custom dev client or EAS build.');
+      return null;
+    }
+  }
+  return ImagePickerModule;
+};
 
 export default function CreateReceiptScreen() {
   const colors = useColors();
@@ -52,12 +65,20 @@ export default function CreateReceiptScreen() {
       Alert.alert('Image Limit', 'You can add up to 7 images per receipt.');
       return;
     }
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const picker = await loadImagePicker();
+    if (!picker) {
+      Alert.alert(
+        'Image Picker Not Available',
+        'Please use a custom dev client or EAS build to access the camera and photo library.\n\nRun: npx expo prebuild && npx expo run:android'
+      );
+      return;
+    }
+    const { status } = await picker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow access to your photo library.');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const result = await picker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.7,
@@ -72,12 +93,20 @@ export default function CreateReceiptScreen() {
       Alert.alert('Image Limit', 'You can add up to 7 images per receipt.');
       return;
     }
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    const picker = await loadImagePicker();
+    if (!picker) {
+      Alert.alert(
+        'Image Picker Not Available',
+        'Please use a custom dev client or EAS build to access the camera and photo library.\n\nRun: npx expo prebuild && npx expo run:android'
+      );
+      return;
+    }
+    const { status } = await picker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow camera access.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.7 });
+    const result = await picker.launchCameraAsync({ allowsEditing: true, quality: 0.7 });
     if (!result.canceled && result.assets.length > 0) {
       setFormData({ ...formData, images: [...formData.images, result.assets[0].uri] });
     }
@@ -354,11 +383,19 @@ export default function CreateReceiptScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* Image Grid */}
             {formData.images.length > 0 && (
               <View className="flex-row flex-wrap gap-2">
                 {formData.images.map((uri, i) => (
-                  <View key={i}>
-                    <Image source={{ uri }} style={{ width: 80, height: 80, borderRadius: 8 }} />
+                  <View key={i} className="relative">
+                    <Image
+                      source={{ uri }}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 8,
+                      }}
+                    />
                     <TouchableOpacity
                       onPress={() => removeImage(i)}
                       disabled={isLoading}
@@ -374,7 +411,7 @@ export default function CreateReceiptScreen() {
                         justifyContent: 'center',
                       }}
                     >
-                      <Text className="text-white font-bold text-xs">x</Text>
+                      <Text className="text-xs font-bold text-white">x</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -387,21 +424,18 @@ export default function CreateReceiptScreen() {
             onPress={handleSubmit}
             disabled={isLoading}
             style={{
-              width: '100%',
               paddingVertical: 16,
-              borderRadius: 16,
+              borderRadius: 12,
               backgroundColor: colors.primary,
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: 40,
+              marginBottom: 20,
               opacity: isLoading ? 0.7 : 1,
             }}
           >
             {isLoading
               ? <ActivityIndicator color="#fff" />
-              : <Text className="text-base font-bold uppercase tracking-wider text-white">
-                  {isOnline ? 'Create Receipt' : 'Save Offline'}
-                </Text>
+              : <Text className="text-sm font-bold uppercase tracking-wider text-white">Submit Receipt</Text>
             }
           </TouchableOpacity>
 
