@@ -71,3 +71,27 @@
 - [x] Integrate storage service with Create Receipt screen
 - [x] Integrate storage service with Staff Home screen
 - [x] Integrate storage service with Receipt Detail screen
+
+
+## Phase 7: Custom Dev Client & Cloud Integration (IN PROGRESS)
+
+### Custom Dev Client Build
+- [x] Document expo prebuild and run:android instructions (DEV_CLIENT_BUILD.md)
+- [x] Create setup guide for developers
+- [ ] Test custom dev client on Android device
+
+### Cloudinary Integration
+- [x] Create Cloudinary upload service module (lib/cloudinary-service.ts)
+- [x] Create Cloudinary setup guide (CLOUDINARY_SETUP.md)
+- [ ] Set up Cloudinary account and get API credentials
+- [ ] Integrate image upload in create-receipt screen
+- [ ] Update receipt storage to save Cloudinary URLs instead of local URIs
+- [ ] Test image upload and retrieval
+
+### Turso Database Connection
+- [x] Create Turso setup guide (TURSO_SETUP.md)
+- [ ] Set up Turso database and get connection string
+- [ ] Create database schema for receipts and staff
+- [ ] Implement API endpoints for CRUD operations
+- [ ] Connect sync queue to Turso backend
+- [ ] Test data persistence and sync
