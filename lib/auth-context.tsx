@@ -22,12 +22,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo accounts — replace with real API auth in production
-const ACCOUNTS: Array<User & { pin: string }> = [
-  { id: 'admin_1', phone: '0100000000', pin: '1234', name: 'Admin User', role: 'admin' },
-  { id: 'staff_1', phone: '0111111111', pin: '1111', name: 'John Smith', role: 'staff' },
-  { id: 'staff_2', phone: '0122222222', pin: '2222', name: 'Sarah Johnson', role: 'staff' },
-];
+// Demo admin account - staff accounts are loaded from AsyncStorage
+const DEMO_ADMIN = { id: 'admin_1', phone: '0100000000', pin: '1234', name: 'Admin User', role: 'admin' as const };
+
+// Load staff accounts from AsyncStorage
+async function getAccounts(): Promise<Array<User & { pin: string }>> {
+  try {
+    const raw = await AsyncStorage.getItem(STAFF_STORE_KEY);
+    const staff = raw ? JSON.parse(raw) : [];
+    return [DEMO_ADMIN, ...staff];
+  } catch (e) {
+    console.error('Failed to load staff accounts:', e);
+    return [DEMO_ADMIN];
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -51,7 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (phone: string, pin: string) => {
     setIsLoading(true);
     try {
-      const account = ACCOUNTS.find(
+      const accounts = await getAccounts();
+      const account = accounts.find(
         (a) => a.phone === phone.trim() && a.pin === pin.trim()
       );
       if (!account) throw new Error('Invalid phone number or PIN');

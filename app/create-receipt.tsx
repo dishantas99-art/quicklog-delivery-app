@@ -20,15 +20,16 @@ interface FormData {
   images: string[];
 }
 
-// Lazy-load ImagePicker to avoid crashing in Expo Go without the native module
+// Lazy-load ImagePicker with fallback
 let ImagePickerModule: any = null;
 const loadImagePicker = async () => {
   if (!ImagePickerModule) {
     try {
       ImagePickerModule = await import('expo-image-picker');
     } catch (err) {
-      console.warn('expo-image-picker not available. Use a custom dev client or EAS build.');
-      return null;
+      console.warn('expo-image-picker not available. Using fallback.');
+      // Use fallback module
+      ImagePickerModule = await import('@/lib/simple-image-picker');
     }
   }
   return ImagePickerModule;
@@ -71,6 +72,15 @@ export default function CreateReceiptScreen() {
       Alert.alert(
         'Image Picker Not Available',
         'Please use a custom dev client or EAS build to access the camera and photo library.\n\nRun: npx expo prebuild && npx expo run:android'
+      );
+      return;
+    }
+    
+    // Check if this is the fallback module (no real image picker available)
+    if (!picker.requestMediaLibraryPermissionsAsync || picker.launchImageLibraryAsync.length === 0) {
+      Alert.alert(
+        'Image Picker Not Available in Expo Go',
+        'To use the image picker, you need to build a custom dev client:\n\n1. Run: npx expo prebuild\n2. Run: npx expo run:android\n3. Install the APK on your device\n\nFor now, you can create receipts without images.'
       );
       return;
     }
@@ -118,6 +128,15 @@ export default function CreateReceiptScreen() {
       Alert.alert(
         'Image Picker Not Available',
         'Please use a custom dev client or EAS build to access the camera and photo library.\n\nRun: npx expo prebuild && npx expo run:android'
+      );
+      return;
+    }
+    
+    // Check if this is the fallback module (no real image picker available)
+    if (!picker.requestMediaLibraryPermissionsAsync || picker.launchImageLibraryAsync.length === 0) {
+      Alert.alert(
+        'Image Picker Not Available in Expo Go',
+        'To use the image picker, you need to build a custom dev client:\n\n1. Run: npx expo prebuild\n2. Run: npx expo run:android\n3. Install the APK on your device\n\nFor now, you can create receipts without images.'
       );
       return;
     }
@@ -169,12 +188,14 @@ export default function CreateReceiptScreen() {
       Alert.alert('Validation Error', 'Please add at least one item with a name and quantity.');
       return;
     }
-    if (formData.images.length < 5) {
-      Alert.alert('Validation Error', `Please add at least 5 images. Currently: ${formData.images.length}/5-7`);
-      return;
-    }
+    // Images are optional for testing in Expo Go
+    // In production, require at least 5 images
     if (formData.images.length > 7) {
       Alert.alert('Validation Error', 'Maximum 7 images allowed per receipt.');
+      return;
+    }
+    if (formData.images.length > 0 && formData.images.length < 5) {
+      Alert.alert('Validation Error', `If adding images, please add at least 5. Currently: ${formData.images.length}/5-7`);
       return;
     }
     setIsLoading(true);
