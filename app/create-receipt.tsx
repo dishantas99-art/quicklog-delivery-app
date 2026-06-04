@@ -90,8 +90,8 @@ export default function CreateReceiptScreen() {
         // Upload to Cloudinary
         const uploadResult = await uploadImageToCloudinary(
           result.assets[0].uri,
-          process.env.CLOUDINARY_CLOUD_NAME || '',
-          process.env.CLOUDINARY_UPLOAD_PRESET || '',
+          process.env.VITE_CLOUDINARY_CLOUD_NAME || '',
+          process.env.VITE_CLOUDINARY_UPLOAD_PRESET || '',
         );
         
         if (uploadResult.success && uploadResult.url) {
@@ -133,8 +133,8 @@ export default function CreateReceiptScreen() {
         // Upload to Cloudinary
         const uploadResult = await uploadImageToCloudinary(
           result.assets[0].uri,
-          process.env.CLOUDINARY_CLOUD_NAME || '',
-          process.env.CLOUDINARY_UPLOAD_PRESET || '',
+          process.env.VITE_CLOUDINARY_CLOUD_NAME || '',
+          process.env.VITE_CLOUDINARY_UPLOAD_PRESET || '',
         );
         
         if (uploadResult.success && uploadResult.url) {
@@ -229,7 +229,7 @@ export default function CreateReceiptScreen() {
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView className="flex-1 px-6 py-4" keyboardShouldPersistTaps="handled">
+        <ScrollView className="flex-1 px-6 py-4" keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 100 }}>
 
           {/* ── Delivery Details ── */}
           <View className="mb-5 p-4 rounded-2xl" style={{ backgroundColor: colors.surface }}>
@@ -468,7 +468,8 @@ export default function CreateReceiptScreen() {
               backgroundColor: colors.primary,
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: 20,
+              marginTop: 8,
+              marginBottom: 0,
               opacity: isLoading ? 0.7 : 1,
             }}
           >
