@@ -9,6 +9,7 @@ import { useReceipts } from '@/lib/receipt-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { useRouter } from 'expo-router';
 import { computeTotal, type ReceiptItem } from '@/lib/storage-service';
+import { uploadImageToCloudinary } from '@/lib/cloudinary-service';
 
 interface FormData {
   customerName: string;
@@ -84,7 +85,26 @@ export default function CreateReceiptScreen() {
       quality: 0.7,
     });
     if (!result.canceled && result.assets.length > 0) {
-      setFormData({ ...formData, images: [...formData.images, result.assets[0].uri] });
+      setIsLoading(true);
+      try {
+        // Upload to Cloudinary
+        const uploadResult = await uploadImageToCloudinary(
+          result.assets[0].uri,
+          process.env.CLOUDINARY_CLOUD_NAME || '',
+          process.env.CLOUDINARY_UPLOAD_PRESET || '',
+        );
+        
+        if (uploadResult.success && uploadResult.url) {
+          // Save Cloudinary URL instead of local URI
+          setFormData({ ...formData, images: [...formData.images, uploadResult.url] });
+        } else {
+          Alert.alert('Upload Failed', uploadResult.error || 'Failed to upload image');
+        }
+      } catch (err) {
+        Alert.alert('Error', err instanceof Error ? err.message : 'Upload failed');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -108,7 +128,26 @@ export default function CreateReceiptScreen() {
     }
     const result = await picker.launchCameraAsync({ allowsEditing: true, quality: 0.7 });
     if (!result.canceled && result.assets.length > 0) {
-      setFormData({ ...formData, images: [...formData.images, result.assets[0].uri] });
+      setIsLoading(true);
+      try {
+        // Upload to Cloudinary
+        const uploadResult = await uploadImageToCloudinary(
+          result.assets[0].uri,
+          process.env.CLOUDINARY_CLOUD_NAME || '',
+          process.env.CLOUDINARY_UPLOAD_PRESET || '',
+        );
+        
+        if (uploadResult.success && uploadResult.url) {
+          // Save Cloudinary URL instead of local URI
+          setFormData({ ...formData, images: [...formData.images, uploadResult.url] });
+        } else {
+          Alert.alert('Upload Failed', uploadResult.error || 'Failed to upload image');
+        }
+      } catch (err) {
+        Alert.alert('Error', err instanceof Error ? err.message : 'Upload failed');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 

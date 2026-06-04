@@ -83,15 +83,14 @@
 ### Cloudinary Integration
 - [x] Create Cloudinary upload service module (lib/cloudinary-service.ts)
 - [x] Create Cloudinary setup guide (CLOUDINARY_SETUP.md)
-- [ ] Set up Cloudinary account and get API credentials
-- [ ] Integrate image upload in create-receipt screen
-- [ ] Update receipt storage to save Cloudinary URLs instead of local URIs
+- [x] Set up Cloudinary account and get API credentials (user set)
+- [x] Integrate image upload in create-receipt screen
+- [x] Update receipt storage to save Cloudinary URLs instead of local URIs
 - [ ] Test image upload and retrieval
 
 ### Turso Database Connection
 - [x] Create Turso setup guide (TURSO_SETUP.md)
-- [ ] Set up Turso database and get connection string
-- [ ] Create database schema for receipts and staff
-- [ ] Implement API endpoints for CRUD operations
-- [ ] Connect sync queue to Turso backend
+- [x] Set up Turso database and get connection string (user set)
+- [x] Create Turso API client module (lib/turso-api.ts)
+- [x] Connect sync queue to Turso backend (receipt-context.tsx updated)
 - [ ] Test data persistence and sync

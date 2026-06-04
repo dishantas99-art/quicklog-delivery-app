@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { receiptStorage, syncQueue, type Receipt } from './storage-service';
 import { useAuth } from './auth-context';
 import { useNetworkStatus } from '@/hooks/use-network-status';
+import { syncReceiptsToTurso } from './turso-api';
 
 interface ReceiptContextType {
   receipts: Receipt[];
@@ -85,27 +86,44 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const getReceipt = async (id: string) => receiptStorage.getReceipt(id);
 
   const syncPendingReceipts = async () => {
+    if (!user) return;
+    
     const pendingItems = await syncQueue.getPendingItems();
     if (pendingItems.length === 0) return;
 
     try {
-      // In a real app, we'd send the actual data. For now, we call the sync endpoint
-      // to demonstrate the network flow.
-      const { createTRPCClient } = await import('./trpc');
-      const client = createTRPCClient();
-      // We use a dummy call to the sync endpoint
-      await client.receipts.sync.mutate({});
+      // Get all unsynced receipts
+      const unsyncedReceipts = await receiptStorage.getUnsyncedReceipts();
       
-      for (const item of pendingItems) {
-        try {
-          await receiptStorage.markAsSynced(item.receiptId);
-          await syncQueue.removeFromQueue(item.id);
-        } catch {
-          await syncQueue.incrementRetry(item.id);
+      if (unsyncedReceipts.length > 0) {
+        // Sync to Turso backend
+        const syncResult = await syncReceiptsToTurso({
+          receipts: unsyncedReceipts,
+          staffId: user.id,
+        });
+        
+        if (syncResult.success) {
+          // Mark all as synced
+          for (const receipt of unsyncedReceipts) {
+            await receiptStorage.markAsSynced(receipt.id);
+          }
+          
+          // Clear sync queue
+          for (const item of pendingItems) {
+            await syncQueue.removeFromQueue(item.id);
+          }
+          
+          console.log(`Successfully synced ${unsyncedReceipts.length} receipts to Turso`);
+        } else {
+          console.error('Sync failed:', syncResult.error);
+          // Increment retry count for failed items
+          for (const item of pendingItems) {
+            await syncQueue.incrementRetry(item.id);
+          }
         }
       }
     } catch (err) {
-      console.error('Sync failed:', err);
+      console.error('Sync error:', err);
     }
 
     const unsynced = await receiptStorage.getUnsyncedReceipts();
